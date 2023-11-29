@@ -3,7 +3,16 @@
     <f:entry title="Testkube API URL" field="apiUrl" >
         <f:textbox/>
     </f:entry>
-    <f:entry title="Testkube Token" field="apiToken" >
+    <f:entry title="Testkube Organization ID" field="orgId" >
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Testkube Environment ID" field="envId" >
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Testkube Namespace" field="tkNamespace" >
+        <f:textbox default="testkube"/>
+    </f:entry>
+    <f:entry title="Testkube API Token" field="apiToken" >
         <f:textbox/>
     </f:entry>
     <f:entry title="Test to run" field="testName" >
