@@ -11,15 +11,33 @@ import java.util.Set;
 
 public class TestkubeStep extends Step {
 
+    private final String orgId;
+    private final String envId;
     private final String apiToken;
+    private final String agentToken;
 
     @DataBoundConstructor
-    public TestkubeStep(String apiToken) {
+    public TestkubeStep(String orgId, String envId, String apiToken, String agentToken) {
+        this.orgId = orgId;
+        this.envId = envId;
         this.apiToken = apiToken;
+        this.agentToken = agentToken;
+    }
+
+    public String getOrgId() {
+        return orgId;
+    }
+
+    public String getEnvId() {
+        return envId;
     }
 
     public String getApiToken() {
         return apiToken;
+    }
+
+    public String getAgentToken() {
+        return agentToken;
     }
 
     @Override
