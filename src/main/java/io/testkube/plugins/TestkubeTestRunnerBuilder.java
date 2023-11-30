@@ -8,13 +8,13 @@ import hudson.model.BuildListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.kohsuke.stapler.DataBoundConstructor;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 public class TestkubeTestRunnerBuilder extends Builder {
@@ -27,7 +27,8 @@ public class TestkubeTestRunnerBuilder extends Builder {
     private final String testName;
 
     @DataBoundConstructor
-    public TestkubeTestRunnerBuilder(String apiUrl, String orgId, String envId, String tkNamespace, String apiToken, String testName) {
+    public TestkubeTestRunnerBuilder(String apiUrl, String orgId, String envId, String tkNamespace, String apiToken,
+            String testName) {
         this.apiUrl = apiUrl;
         this.orgId = orgId;
         this.envId = envId;
@@ -73,6 +74,7 @@ public class TestkubeTestRunnerBuilder extends Builder {
             return true;
         }
 
+        @Nonnull
         @Override
         public String getDisplayName() {
             return "Testkube Runner";
