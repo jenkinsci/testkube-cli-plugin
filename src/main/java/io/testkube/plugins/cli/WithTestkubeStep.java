@@ -1,4 +1,4 @@
-package io.testkube.plugins;
+package io.testkube.plugins.cli;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 import java.util.Collections;
 import java.util.Set;
 
-public class TestkubeStep extends Step {
+public class WithTestkubeStep extends Step {
 
     private final String orgId;
     private final String envId;
@@ -17,7 +17,7 @@ public class TestkubeStep extends Step {
     private final String agentToken;
 
     @DataBoundConstructor
-    public TestkubeStep(String orgId, String envId, String apiToken, String agentToken) {
+    public WithTestkubeStep(String orgId, String envId, String apiToken, String agentToken) {
         this.orgId = orgId;
         this.envId = envId;
         this.apiToken = apiToken;
@@ -42,7 +42,7 @@ public class TestkubeStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        return new TestkubeStepExecution(this, context);
+        return new WithTestkubeStepExecution(this, context);
     }
 
     @Extension

@@ -1,4 +1,4 @@
-package io.testkube.plugins;
+package io.testkube.plugins.api.builders;
 
 import hudson.Extension;
 import hudson.Launcher;

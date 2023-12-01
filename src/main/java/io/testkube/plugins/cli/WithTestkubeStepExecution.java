@@ -1,4 +1,4 @@
-package io.testkube.plugins;
+package io.testkube.plugins.cli;
 
 import org.jenkinsci.plugins.workflow.steps.BodyInvoker;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
@@ -10,12 +10,12 @@ import hudson.Launcher.ProcStarter;
 import hudson.Proc;
 import hudson.model.TaskListener;
 
-public class TestkubeStepExecution extends SynchronousNonBlockingStepExecution<Void> {
+public class WithTestkubeStepExecution extends SynchronousNonBlockingStepExecution<Void> {
     private static final long serialVersionUID = 1L;
 
-    private transient final TestkubeStep step;
+    private transient final WithTestkubeStep step;
 
-    protected TestkubeStepExecution(TestkubeStep step, StepContext context) {
+    protected WithTestkubeStepExecution(WithTestkubeStep step, StepContext context) {
         super(context);
         this.step = step;
     }
