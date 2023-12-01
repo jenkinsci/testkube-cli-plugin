@@ -6,64 +6,37 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.tasks.Builder;
+import io.testkube.plugins.api.manager.TestkubeConfig;
+import io.testkube.plugins.api.manager.TestkubeManager;
 import hudson.tasks.BuildStepDescriptor;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public class TestkubeTestRunnerBuilder extends Builder {
-
-    private final String apiUrl;
-    private final String orgId;
-    private final String envId;
-    private final String tkNamespace;
-    private final String apiToken;
-    private final String testName;
+    private String testName;
 
     @DataBoundConstructor
     public TestkubeTestRunnerBuilder(String apiUrl, String orgId, String envId, String tkNamespace, String apiToken,
             String testName) {
-        this.apiUrl = apiUrl;
-        this.orgId = orgId;
-        this.envId = envId;
-        this.tkNamespace = tkNamespace;
-        this.apiToken = apiToken;
         this.testName = testName;
+        TestkubeConfig.init(orgId, apiUrl, envId, apiToken, tkNamespace);
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         listener.getLogger().println("Start Testkube test");
 
-        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
-            String fullUrl = apiUrl + "/organizations/" + orgId + "/environments/" + envId + "/agent/tests/" + testName
-                    + "/executions";
+        var executionId = TestkubeManager.runTest(testName);
 
-            listener.getLogger().println("Testkube Test URL: " + fullUrl);
+        var result = TestkubeManager.waitForExecution(testName, executionId);
 
-            HttpPost request = new HttpPost(fullUrl);
-            request.setHeader("Authorization", "Bearer " + apiToken);
-            request.setHeader("Content-Type", "application/json");
-
-            String jsonBody = "{\"namespace\": \"" + tkNamespace + "\"}";
-            StringEntity entity = new StringEntity(jsonBody);
-            request.setEntity(entity);
-
-            try (CloseableHttpResponse response = httpClient.execute(request)) {
-                listener.getLogger().println("Status: " + response.getStatusLine());
-            }
-
-        } catch (IOException e) {
-            listener.getLogger().println("Error during REST API Call: " + e.getMessage());
-            return false;
+        if (result.getStatus().equals("passed")) {
+            return true;
         }
-        return true;
+
+        return false;
     }
 
     @Extension
@@ -77,7 +50,7 @@ public class TestkubeTestRunnerBuilder extends Builder {
         @Nonnull
         @Override
         public String getDisplayName() {
-            return "Testkube Runner";
+            return "Testkube Test Runner";
         }
     }
 }

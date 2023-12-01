@@ -47,7 +47,7 @@ public class TestkubeManager {
     }
 
     private static String run(TestkubeTestType testType, String testName) {
-        String prefix = "[runTest:" + testName + "]";
+        String msgPrefix = "[runTest:" + testName + "]";
         String executionId = null;
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
@@ -64,27 +64,27 @@ public class TestkubeManager {
                         String result = EntityUtils.toString(entity);
                         JSONObject json = new JSONObject(result);
                         executionId = json.getString("id");
-                        System.out.println(prefix + "Successfully created execution with id: " + executionId);
+                        System.out.println(msgPrefix + "Successfully created execution with id: " + executionId);
                         break;
                     case 400:
-                        System.out.println(prefix + "Problem with request body.");
+                        System.out.println(msgPrefix + "Problem with request body.");
                         break;
                     case 404:
-                        System.out.println(prefix + "Test not found.");
+                        System.out.println(msgPrefix + "Test not found.");
                         break;
                     case 500:
-                        System.out.println(prefix + "Problem with test execution.");
+                        System.out.println(msgPrefix + "Problem with test execution.");
                         break;
                     case 502:
-                        System.out.println(prefix + "Problem with communicating with Kubernetes cluster.");
+                        System.out.println(msgPrefix + "Problem with communicating with Kubernetes cluster.");
                         break;
                     default:
-                        System.out.println(prefix + "Unexpected status code: " + statusCode);
+                        System.out.println(msgPrefix + "Unexpected status code: " + statusCode);
                 }
             }
 
         } catch (IOException e) {
-            System.out.println(prefix + "Error: " + e.getMessage());
+            System.out.println(msgPrefix + "Error: " + e.getMessage());
         }
 
         return executionId;
@@ -98,8 +98,8 @@ public class TestkubeManager {
         return run(TestkubeTestType.TEST_SUITE, testName);
     }
 
-    public static TestkubeTestResult pollTestResult(String testName, String executionId)
-            throws IOException, InterruptedException {
+    public static TestkubeTestResult waitForExecution(String testName, String executionId) {
+        String msgPrefix = "[waitForExecution:" + testName + "]";
         String status = null;
         String previousStatus = null;
         String output = null;
@@ -120,11 +120,21 @@ public class TestkubeManager {
                         previousStatus = status;
                     }
                     if (!status.equals("queued") && !status.equals("running")) {
+                        System.out.println(msgPrefix + "Execution finished with status: " + status);
                         break;
                     }
+                    Thread.sleep(1000);
+                } catch (IOException e) {
+                    System.out.println(msgPrefix + "Error: " + e.getMessage());
+                    break;
+                } catch (InterruptedException e) {
+                    System.out.println(msgPrefix + "Interrupted: " + e.getMessage());
+                    Thread.currentThread().interrupt();
+                    break;
                 }
-                Thread.sleep(1000);
             }
+        } catch (IOException e) {
+            System.out.println(msgPrefix + "Error: " + e.getMessage());
         }
         return new TestkubeTestResult(executionId, status, output, errorMessage);
     }
