@@ -1,5 +1,7 @@
 package io.testkube.plugins.api.manager;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.*;
@@ -47,7 +49,7 @@ public class TestkubeManager {
     }
 
     private static String run(TestkubeTestType testType, String testName) {
-        String msgPrefix = "[runTest:" + testName + "]";
+        String msgPrefix = "runTest(" + testName + ") ";
         String executionId = null;
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
@@ -64,27 +66,27 @@ public class TestkubeManager {
                         String result = EntityUtils.toString(entity);
                         JSONObject json = new JSONObject(result);
                         executionId = json.getString("id");
-                        System.out.println(msgPrefix + "Successfully created execution with id: " + executionId);
+                        TestkubeLogger.println(msgPrefix + "Successfully created execution with id: " + executionId);
                         break;
                     case 400:
-                        System.out.println(msgPrefix + "Problem with request body.");
+                        TestkubeLogger.println(msgPrefix + "Problem with request body.");
                         break;
                     case 404:
-                        System.out.println(msgPrefix + "Test not found.");
+                        TestkubeLogger.println(msgPrefix + "Test not found.");
                         break;
                     case 500:
-                        System.out.println(msgPrefix + "Problem with test execution.");
+                        TestkubeLogger.println(msgPrefix + "Problem with test execution.");
                         break;
                     case 502:
-                        System.out.println(msgPrefix + "Problem with communicating with Kubernetes cluster.");
+                        TestkubeLogger.println(msgPrefix + "Problem with communicating with Kubernetes cluster.");
                         break;
                     default:
-                        System.out.println(msgPrefix + "Unexpected status code: " + statusCode);
+                        TestkubeLogger.println(msgPrefix + "Unexpected status code: " + statusCode);
                 }
             }
 
         } catch (IOException e) {
-            System.out.println(msgPrefix + "Error: " + e.getMessage());
+            TestkubeLogger.println(msgPrefix + "Error: " + e.getMessage());
         }
 
         return executionId;
@@ -99,44 +101,65 @@ public class TestkubeManager {
     }
 
     public static TestkubeTestResult waitForExecution(String testName, String executionId) {
-        String msgPrefix = "[waitForExecution:" + testName + "]";
+        String msgPrefix = "waitForExecution(" + testName + ") ";
         String status = null;
         String previousStatus = null;
         String output = null;
         String errorMessage = null;
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            var request = createRequest(HttpGet.class, "/tests/" + testName + "/executions/" + executionId);
+            TestkubeLogger.println(msgPrefix + "Request URI:" + request.getURI().toString());
             while (true) {
-                var request = createRequest(HttpGet.class, "/tests/" + testName + "/executions/" + executionId);
                 try (CloseableHttpResponse response = httpClient.execute(request)) {
                     HttpEntity entity = response.getEntity();
                     String result = EntityUtils.toString(entity);
                     JSONObject json = new JSONObject(result);
-                    JSONObject executionResultObject = json.getJSONObject("executionResult");
-                    output = executionResultObject.getString("output");
-                    errorMessage = executionResultObject.getString("errorMessage");
-                    status = executionResultObject.getString("status");
+                    // TODO: use the below code after the getExecutionsById API is fixed
+                    // TestkubeLogger.println(result);
+                    // JSONObject executionResultObject = json.getJSONObject("executionResult");
+                    // output = executionResultObject.getString("output");
+                    // errorMessage = executionResultObject.getString("errorMessage");
+                    // status = executionResultObject.getString("status");
+                    status = getStatusFromResults(json, executionId);
                     if (!status.equals(previousStatus)) {
-                        System.out.println("[pollTestResult:" + testName + "] Status: " + status);
+                        TestkubeLogger.println(msgPrefix + "Execution Status: " + status);
                         previousStatus = status;
                     }
                     if (!status.equals("queued") && !status.equals("running")) {
-                        System.out.println(msgPrefix + "Execution finished with status: " + status);
+                        TestkubeLogger.println(msgPrefix + "Execution finished with status: " + status);
                         break;
                     }
                     Thread.sleep(1000);
+                } catch (JSONException e) {
+                    TestkubeLogger.println(msgPrefix + "JSON Error: " + e.getMessage());
+                    break;
                 } catch (IOException e) {
-                    System.out.println(msgPrefix + "Error: " + e.getMessage());
+                    TestkubeLogger.println(msgPrefix + "Error: " + e.getMessage());
                     break;
                 } catch (InterruptedException e) {
-                    System.out.println(msgPrefix + "Interrupted: " + e.getMessage());
+                    TestkubeLogger.println(msgPrefix + "Interrupted: " + e.getMessage());
                     Thread.currentThread().interrupt();
                     break;
                 }
             }
         } catch (IOException e) {
-            System.out.println(msgPrefix + "Error: " + e.getMessage());
+            TestkubeLogger.println(msgPrefix + "Error: " + e.getMessage());
+        }
+        if (status == null) {
+            return null;
         }
         return new TestkubeTestResult(executionId, status, output, errorMessage);
+    }
+
+    public static String getStatusFromResults(JSONObject json, String executionId) {
+        JSONArray resultsArray = json.getJSONArray("results");
+        for (int i = 0; i < resultsArray.length(); i++) {
+            JSONObject executionResultObject = resultsArray.getJSONObject(i);
+            if (executionResultObject.getString("id").equals(executionId)) {
+                return executionResultObject.getString("status");
+            }
+        }
+        return null;
     }
 
 }

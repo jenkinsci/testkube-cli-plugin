@@ -21,6 +21,11 @@ public class TestkubeConfig {
     }
 
     public static void init(String orgId, String apiUrl, String envId, String apiToken, String namespace) {
+        Utils.checkNotNull("orgId", orgId);
+        Utils.checkNotNull("apiUrl", apiUrl);
+        Utils.checkNotNull("envId", envId);
+        Utils.checkNotNull("apiToken", apiToken);
+
         getInstance().orgId = orgId;
         getInstance().apiUrl = apiUrl;
         getInstance().envId = envId;
@@ -50,7 +55,7 @@ public class TestkubeConfig {
 
     public static String getNamespace() {
         checkInitialized();
-        return getInstance().namespace;
+        return getInstance().namespace != null ? getInstance().namespace : "testkube";
     }
 
     private static void checkInitialized() {
