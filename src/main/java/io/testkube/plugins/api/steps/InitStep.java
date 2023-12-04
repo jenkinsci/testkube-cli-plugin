@@ -40,8 +40,20 @@ public class InitStep extends Step {
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        TestkubeConfig.init(orgId, apiUrl, envId, apiToken, apiToken);
-        return null;
+        TestkubeConfig.init(orgId, apiUrl, envId, apiToken, "testkube");
+        return new NoOpExecution(context);
+    }
+
+    private static class NoOpExecution extends SynchronousNonBlockingStepExecution<Void> {
+        protected NoOpExecution(StepContext context) {
+            super(context);
+        }
+
+        @Override
+        protected Void run() throws Exception {
+            // Do nothing
+            return null;
+        }
     }
 
     @Extension
