@@ -13,6 +13,8 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestkubeManager {
 
@@ -48,25 +50,44 @@ public class TestkubeManager {
         return request;
     }
 
-    private static String run(TestkubeTestType testType, String testName) {
+    private static List<TestkubeRunResult> run(TestkubeTestType testType, String testName) {
         String msgPrefix = "runTest(" + testName + ") ";
-        String executionId = null;
+
+        var runResults = new ArrayList<TestkubeRunResult>();
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             String namespace = TestkubeConfig.getNamespace();
             String runTestUrl = "/" + testType.getValue() + "/" + testName + "/executions";
             String jsonBody = "{\"namespace\": \"" + namespace + "\"}";
             var request = createRequest(HttpPost.class, runTestUrl, jsonBody);
-
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 switch (statusCode) {
                     case 201:
-                        HttpEntity entity = response.getEntity();
-                        String result = EntityUtils.toString(entity);
-                        JSONObject json = new JSONObject(result);
-                        executionId = json.getString("id");
-                        TestkubeLogger.println(msgPrefix + "Successfully created execution with id: " + executionId);
+                        var entity = response.getEntity();
+                        var result = EntityUtils.toString(entity);
+                        var json = new JSONObject(result);
+                        if (testType.equals(TestkubeTestType.TEST_SUITE)) {
+                            var executeStepResults = json.getJSONArray("executeStepResults");
+                            for (int i = 0; i < executeStepResults.length(); i++) {
+                                var stepResults = executeStepResults.getJSONObject(i);
+                                var executeArray = stepResults.getJSONArray("execute");
+                                for (int j = 0; j < executeArray.length(); j++) {
+                                    var testObject = executeArray.getJSONObject(j);
+                                    var stepObject = testObject.getJSONObject("step");
+                                    var testId = stepObject.getString("test");
+                                    var executionObject = testObject.getJSONObject("execution");
+                                    var executionId = executionObject.getString("id");
+                                    runResults.add(new TestkubeRunResult(testId, executionId));
+                                    TestkubeLogger.println(msgPrefix + "Created test execution with id: " + executionId);
+                                }
+                            }
+                        } else if (testType.equals(TestkubeTestType.TEST)) {
+                            var executionId = json.getString("id");
+                            runResults.add(new TestkubeRunResult(testName, executionId));
+                            TestkubeLogger.println(msgPrefix + "Created test execution with id: " + executionId);
+                        }
+
                         break;
                     case 400:
                         TestkubeLogger.println(msgPrefix + "Problem with request body.");
@@ -89,14 +110,15 @@ public class TestkubeManager {
             TestkubeLogger.println(msgPrefix + "Error: " + e.getMessage());
         }
 
-        return executionId;
+        return runResults;
     }
 
-    public static String runTest(String testName) {
-        return run(TestkubeTestType.TEST, testName);
+    public static TestkubeRunResult runTest(String testName) {
+        var results = run(TestkubeTestType.TEST, testName);
+        return results.get(0);
     }
 
-    public static String runTestSuite(String testName) {
+    public static List<TestkubeRunResult> runTestSuite(String testName) {
         return run(TestkubeTestType.TEST_SUITE, testName);
     }
 

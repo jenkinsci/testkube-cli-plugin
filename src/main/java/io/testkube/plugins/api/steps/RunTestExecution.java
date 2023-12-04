@@ -23,8 +23,8 @@ public class RunTestExecution extends SynchronousNonBlockingStepExecution<Void> 
         var logger = listener.getLogger();
         TestkubeLogger.init(logger);
 
-        var executionId = TestkubeManager.runTest(step.getTestName());
-        var result = TestkubeManager.waitForExecution(step.getTestName(), executionId);
+        var runResult = TestkubeManager.runTest(step.getTestName());
+        var result = TestkubeManager.waitForExecution(runResult.getTestName(), runResult.getExecutionId());
 
         if (result == null || !result.getStatus().equals("passed")) {
             getContext().onFailure(null);

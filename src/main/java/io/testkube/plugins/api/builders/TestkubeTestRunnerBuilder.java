@@ -40,8 +40,8 @@ public class TestkubeTestRunnerBuilder extends Builder {
         TestkubeConfig.init(orgId, apiUrl, envId, apiToken, tkNamespace);
         TestkubeLogger.init(logger);
 
-        var executionId = TestkubeManager.runTest(testName);
-        var result = TestkubeManager.waitForExecution(testName, executionId);
+        var runResult = TestkubeManager.runTest(testName);
+        var result = TestkubeManager.waitForExecution(runResult.getTestName(), runResult.getExecutionId());
 
         if (result == null) {
             return false;
