@@ -39,7 +39,7 @@ public class TestkubeConfig {
                 null);
 
         getInstance().apiUrl = getInstance().apiUrl != null ? getInstance().apiUrl
-                : getPlainTextFromCredentials("apiUrl", credentialsList);
+                : getPlainTextFromCredentials("apiUrl", credentialsList, "https://api.testkube.io");
         getInstance().apiToken = getInstance().apiToken != null ? getInstance().apiToken
                 : getPlainTextFromCredentials("apiToken", credentialsList);
         getInstance().orgId = getInstance().orgId != null ? getInstance().orgId
