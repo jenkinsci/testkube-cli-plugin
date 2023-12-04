@@ -1,21 +1,6 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
-    <f:entry title="Testkube API URL" field="apiUrl" >
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="Testkube Organization ID" field="orgId" >
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="Testkube Environment ID" field="envId" >
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="Testkube Namespace" field="tkNamespace" >
-        <f:textbox default="testkube"/>
-    </f:entry>
-    <f:entry title="Testkube API Token" field="apiToken" >
-        <f:textbox/>
-    </f:entry>
-    <f:entry title="Test to run" field="testName" >
+    <f:entry title="Test name" field="testName" >
         <f:textbox/>
     </f:entry>
 </j:jelly>

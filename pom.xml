@@ -62,6 +62,16 @@
       <artifactId>json</artifactId>
       <version>20231013</version>
     </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>credentials</artifactId>
+      <version>1309.v8835d63eb_d8a_</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>plain-credentials</artifactId>
+      <version>143.v1b_df8b_d3b_e48</version>
+    </dependency>
   </dependencies>
 
   <repositories>

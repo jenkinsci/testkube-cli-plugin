@@ -1,46 +1,93 @@
 package io.testkube.plugins.api.steps;
 
+import com.cloudbees.plugins.credentials.CredentialsMatchers;
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+
 import hudson.Extension;
 import hudson.model.TaskListener;
+import hudson.security.ACL;
 import io.testkube.plugins.api.manager.TestkubeConfig;
-
+import io.testkube.plugins.api.manager.TestkubeLogger;
+import jenkins.model.Jenkins;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
 import javax.annotation.Nonnull;
+
+import java.io.PrintStream;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 public class InitStep extends Step {
 
-    private final String orgId;
-    private final String envId;
-    private final String apiToken;
-    private final String apiUrl;
+    private String orgId;
+    private String envId;
+    private String apiToken;
+    private String apiUrl;
+    private String namespace;
 
     @DataBoundConstructor
-    public InitStep(String orgId, String envId, String apiToken, String apiUrl) {
-        this.orgId = orgId;
-        this.envId = envId;
-        this.apiToken = apiToken;
-        this.apiUrl = apiUrl;
+    public InitStep() {
     }
 
     public String getOrgId() {
         return orgId;
     }
 
+    @DataBoundSetter
+    public void setOrgId(String orgId) {
+        this.orgId = orgId;
+    }
+
     public String getEnvId() {
         return envId;
+    }
+
+    @DataBoundSetter
+    public void setEnvId(String envId) {
+        this.envId = envId;
     }
 
     public String getApiToken() {
         return apiToken;
     }
 
+    @DataBoundSetter
+    public void setApiToken(String apiToken) {
+        this.apiToken = apiToken;
+    }
+
+    public String getApiUrl() {
+        return apiUrl;
+    }
+
+    @DataBoundSetter
+    public void setApiUrl(String apiUrl) {
+        this.apiUrl = apiUrl;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    @DataBoundSetter
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     @Override
     public StepExecution start(StepContext context) throws Exception {
-        TestkubeConfig.init(orgId, apiUrl, envId, apiToken, "testkube");
+        var logger = context.get(TaskListener.class).getLogger();
+        TestkubeLogger.init(logger);
+        TestkubeConfig.setApiUrl(apiUrl);
+        TestkubeConfig.setApiToken(apiToken);
+        TestkubeConfig.setOrgId(orgId);
+        TestkubeConfig.setEnvId(envId);
+        TestkubeConfig.setNamespace(namespace);
+        TestkubeConfig.init();
         return new NoOpExecution(context);
     }
 

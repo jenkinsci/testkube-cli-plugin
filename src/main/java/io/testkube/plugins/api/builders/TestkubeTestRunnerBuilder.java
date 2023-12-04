@@ -17,28 +17,20 @@ import javax.annotation.Nonnull;
 
 public class TestkubeTestRunnerBuilder extends Builder {
     private final String testName;
-    private final String apiUrl;
-    private final String orgId;
-    private final String envId;
-    private final String tkNamespace;
-    private final String apiToken;
 
     @DataBoundConstructor
     public TestkubeTestRunnerBuilder(String apiUrl, String orgId, String envId, String tkNamespace, String apiToken,
             String testName) {
         this.testName = testName;
-        this.apiUrl = apiUrl;
-        this.orgId = orgId;
-        this.envId = envId;
-        this.tkNamespace = tkNamespace;
-        this.apiToken = apiToken;
+
     }
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         var logger = listener.getLogger();
-        TestkubeConfig.init(orgId, apiUrl, envId, apiToken, tkNamespace);
+
         TestkubeLogger.init(logger);
+        TestkubeConfig.init();
 
         var runResult = TestkubeManager.runTest(testName);
         var result = TestkubeManager.waitForExecution(runResult.getTestName(), runResult.getExecutionId());
