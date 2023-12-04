@@ -47,11 +47,13 @@ public class TestkubeConfig {
         getInstance().envId = getInstance().envId != null ? getInstance().envId
                 : getPlainTextFromCredentials("envId", credentialsList);
         getInstance().namespace = getInstance().namespace != null ? getInstance().namespace
-                : getPlainTextFromCredentials("namespace", credentialsList);
-        getInstance().namespace = getInstance().namespace != null ? getInstance().namespace : "testkube";
+                : getPlainTextFromCredentials("namespace", credentialsList, "testkube");
     }
 
     public static String getPlainTextFromCredentials(String credentialsId, List<StringCredentials> credentialsList) {
+        return getPlainTextFromCredentials(credentialsId, credentialsList, null);
+    }
+    public static String getPlainTextFromCredentials(String credentialsId, List<StringCredentials> credentialsList, String defaultValue) {
         String uppercaseCredentialsId = "TESTKUBE_"
                 + credentialsId.replaceAll("(\\p{Lower})(\\p{Upper})", "$1_$2").toUpperCase();
 
@@ -60,6 +62,9 @@ public class TestkubeConfig {
                 CredentialsMatchers.withId(uppercaseCredentialsId));
 
         if (credentials == null) {
+            if (defaultValue != null) {
+                return defaultValue;
+            }
             TestkubeLogger.println("Missing " + credentialsId
                     + " argument. Please set a value for the argument or set a String Credential with the ID: "
                     + uppercaseCredentialsId);
