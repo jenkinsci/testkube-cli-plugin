@@ -62,11 +62,11 @@ public class TestkubeManager {
             var request = createRequest(HttpPost.class, runTestUrl, jsonBody);
             try (CloseableHttpResponse response = httpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
+                var entity = response.getEntity();
+                var bodyString = EntityUtils.toString(entity);
                 switch (statusCode) {
                     case 201:
-                        var entity = response.getEntity();
-                        var result = EntityUtils.toString(entity);
-                        var json = new JSONObject(result);
+                        var json = new JSONObject(bodyString);
                         if (testType.equals(TestkubeTestType.TEST_SUITE)) {
                             var executeStepResults = json.getJSONArray("executeStepResults");
                             for (int i = 0; i < executeStepResults.length(); i++) {
@@ -79,7 +79,8 @@ public class TestkubeManager {
                                     var executionObject = testObject.getJSONObject("execution");
                                     var executionId = executionObject.getString("id");
                                     runResults.add(new TestkubeRunResult(testId, executionId));
-                                    TestkubeLogger.println(msgPrefix + "Created test execution with id: " + executionId);
+                                    TestkubeLogger
+                                            .println(msgPrefix + "Created test execution with id: " + executionId);
                                 }
                             }
                         } else if (testType.equals(TestkubeTestType.TEST)) {
@@ -90,19 +91,21 @@ public class TestkubeManager {
 
                         break;
                     case 400:
-                        TestkubeLogger.println(msgPrefix + "Problem with request body.");
+                        TestkubeLogger.println(msgPrefix + "Problem with request body: \n" + bodyString);
                         break;
                     case 404:
-                        TestkubeLogger.println(msgPrefix + "Test not found.");
+                        TestkubeLogger.println(msgPrefix + "Test not found: \n" + bodyString);
                         break;
                     case 500:
-                        TestkubeLogger.println(msgPrefix + "Problem with test execution.");
+                        TestkubeLogger.println(msgPrefix + "Problem with test execution: \n" + bodyString);
                         break;
                     case 502:
-                        TestkubeLogger.println(msgPrefix + "Problem with communicating with Kubernetes cluster.");
+                        TestkubeLogger.println(
+                                msgPrefix + "Problem with communicating with Kubernetes cluster: \n" + bodyString);
                         break;
                     default:
-                        TestkubeLogger.println(msgPrefix + "Unexpected status code: " + statusCode);
+                        TestkubeLogger
+                                .println(msgPrefix + "Unexpected status code: " + statusCode + "\n" + bodyString);
                 }
             }
 
