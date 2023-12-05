@@ -1,24 +1,17 @@
 package io.testkube.plugins.api.steps;
 
-import com.cloudbees.plugins.credentials.CredentialsMatchers;
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.model.TaskListener;
-import hudson.security.ACL;
 import io.testkube.plugins.api.manager.TestkubeConfig;
 import io.testkube.plugins.api.manager.TestkubeLogger;
-import jenkins.model.Jenkins;
-import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.jenkinsci.plugins.workflow.steps.*;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
 import javax.annotation.Nonnull;
 
-import java.io.PrintStream;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 public class InitStep extends Step {
@@ -87,7 +80,7 @@ public class InitStep extends Step {
         TestkubeConfig.setOrgId(orgId);
         TestkubeConfig.setEnvId(envId);
         TestkubeConfig.setNamespace(namespace);
-        TestkubeConfig.init();
+        TestkubeConfig.init(context.get(EnvVars.class));
         return new NoOpExecution(context);
     }
 

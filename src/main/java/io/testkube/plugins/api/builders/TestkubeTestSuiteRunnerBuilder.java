@@ -1,5 +1,6 @@
 package io.testkube.plugins.api.builders;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
@@ -12,6 +13,8 @@ import io.testkube.plugins.api.manager.TestkubeManager;
 import hudson.tasks.BuildStepDescriptor;
 
 import org.kohsuke.stapler.DataBoundConstructor;
+
+import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
@@ -28,8 +31,16 @@ public class TestkubeTestSuiteRunnerBuilder extends Builder {
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         var logger = listener.getLogger();
 
+        EnvVars envVars;
+        try {
+            envVars = build.getEnvironment(listener);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
+
         TestkubeLogger.init(logger);
-        TestkubeConfig.init();
+        TestkubeConfig.init(envVars);
 
         var runResults = TestkubeManager.runTestSuite(testName);
 

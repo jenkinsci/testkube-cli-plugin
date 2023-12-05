@@ -7,6 +7,7 @@ import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 
+import hudson.EnvVars;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
 
@@ -31,6 +32,10 @@ public class TestkubeConfig {
     }
 
     public static void init() {
+        init(new EnvVars());
+    }
+
+    public static void init(EnvVars envVars) {
         Jenkins jenkins = Jenkins.get();
         List<StringCredentials> credentialsList = CredentialsProvider.lookupCredentialsInItemGroup(
                 StringCredentials.class,
@@ -38,39 +43,58 @@ public class TestkubeConfig {
                 ACL.SYSTEM2,
                 null);
 
-        getInstance().apiUrl = getInstance().apiUrl != null ? getInstance().apiUrl
-                : getPlainTextFromCredentials("apiUrl", credentialsList, "https://api.testkube.io");
-        getInstance().apiToken = getInstance().apiToken != null ? getInstance().apiToken
-                : getPlainTextFromCredentials("apiToken", credentialsList);
-        getInstance().orgId = getInstance().orgId != null ? getInstance().orgId
-                : getPlainTextFromCredentials("orgId", credentialsList);
-        getInstance().envId = getInstance().envId != null ? getInstance().envId
-                : getPlainTextFromCredentials("envId", credentialsList);
-        getInstance().namespace = getInstance().namespace != null ? getInstance().namespace
-                : getPlainTextFromCredentials("namespace", credentialsList, "testkube");
-    }
-
-    public static String getPlainTextFromCredentials(String credentialsId, List<StringCredentials> credentialsList) {
-        return getPlainTextFromCredentials(credentialsId, credentialsList, null);
-    }
-    public static String getPlainTextFromCredentials(String credentialsId, List<StringCredentials> credentialsList, String defaultValue) {
-        String uppercaseCredentialsId = "TESTKUBE_"
-                + credentialsId.replaceAll("(\\p{Lower})(\\p{Upper})", "$1_$2").toUpperCase();
-
-        StringCredentials credentials = CredentialsMatchers.firstOrNull(
-                credentialsList,
-                CredentialsMatchers.withId(uppercaseCredentialsId));
-
-        if (credentials == null) {
-            if (defaultValue != null) {
-                return defaultValue;
-            }
-            TestkubeLogger.println("Missing " + credentialsId
-                    + " argument. Please set a value for the argument or set a String Credential with the ID: "
-                    + uppercaseCredentialsId);
-            return null;
+        if (getInstance().apiUrl == null) {
+            getInstance().apiUrl = getArgValue("apiUrl", envVars, credentialsList, "https://api.testkube.io");
         }
-        return credentials.getSecret().getPlainText();
+        if (getInstance().apiToken == null) {
+            getInstance().apiToken = getArgValue("apiToken", envVars, credentialsList);
+        }
+        if (getInstance().orgId == null) {
+            getInstance().orgId = getArgValue("orgId", envVars, credentialsList);
+        }
+        if (getInstance().envId == null) {
+            getInstance().envId = getArgValue("envId", envVars, credentialsList);
+        }
+        if (getInstance().namespace == null) {
+            getInstance().namespace = getArgValue("namespace", envVars, credentialsList, "testkube");
+        }
+
+        getInstance().apiUrl = getArgValue("apiUrl", envVars, credentialsList);
+    }
+
+    private static String getArgValue(String argName, EnvVars envVars, List<StringCredentials> credentialsList) {
+        return getArgValue(argName, envVars, credentialsList, null);
+    }
+
+    private static String getArgValue(String argName, EnvVars envVars, List<StringCredentials> credentialsList,
+            String defaultValue) {
+        String uppercaseArgName = "TESTKUBE_"
+                + argName.replaceAll("(\\p{Lower})(\\p{Upper})", "$1_$2").toUpperCase();
+
+        String argValue = null;
+        argValue = envVars.get(uppercaseArgName);
+
+        if (argValue == null) {
+            StringCredentials credentials = CredentialsMatchers.firstOrNull(
+                    credentialsList,
+                    CredentialsMatchers.withId(uppercaseArgName));
+            if (credentials != null) {
+                argValue = credentials.getSecret().getPlainText();
+            }
+        }
+
+        if (argValue == null) {
+            argValue = defaultValue;
+        }
+
+        if (argValue == null) {
+            TestkubeLogger.println("Missing " + argName
+                    + " argument. Please set a value for the argument or alternatively set an environment variable or a Jenkins credential with the identifier "
+                    + uppercaseArgName);
+        }
+
+        return argValue;
+
     }
 
     public static String getOrgId() {
@@ -122,7 +146,7 @@ public class TestkubeConfig {
         if (getInstance().orgId == null || getInstance().apiUrl == null || getInstance().envId == null
                 || getInstance().apiToken == null) {
             throw new IllegalStateException(
-                    "TestkubeConfig has not been initialized. Call TestkubeConfig.init() first.");
+                    "TestkubeConfig has not been initialized correctly, one of the following arguments not found: orgId, apiUrl, envId or apiToken.");
         }
     }
 }
