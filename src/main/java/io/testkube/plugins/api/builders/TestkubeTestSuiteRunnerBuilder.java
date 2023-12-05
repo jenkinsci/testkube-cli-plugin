@@ -65,7 +65,7 @@ public class TestkubeTestSuiteRunnerBuilder extends Builder {
         @Nonnull
         @Override
         public String getDisplayName() {
-            return "Testkube Test Runner";
+            return "Testkube Test Suite Runner";
         }
     }
 }

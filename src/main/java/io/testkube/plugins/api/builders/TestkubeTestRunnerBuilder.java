@@ -6,7 +6,6 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Environment;
 import hudson.tasks.Builder;
 import io.testkube.plugins.api.manager.TestkubeConfig;
 import io.testkube.plugins.api.manager.TestkubeLogger;

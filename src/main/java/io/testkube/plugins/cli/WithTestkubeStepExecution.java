@@ -38,7 +38,7 @@ public class WithTestkubeStepExecution extends SynchronousNonBlockingStepExecuti
         ProcStarter testkubeInitProcStarter = launcher.launch();
         testkubeInitProcStarter.stdout(listener).cmds("testkube", "cloud", "init", "--agent-token",
                 step.getAgentToken(),
-                "--org-id", step.getOrgId(), "--env-id", step.getEnvId(), "--cloud-root-domain", "testkube.dev",
+                "--org-id", step.getOrgId(), "--env-id", step.getEnvId(), "--cloud-root-domain", step.getRootDomain(),
                 "--no-confirm");
         Proc testkubeInitProc = testkubeInitProcStarter.start();
         int testkubeInitExitCode = testkubeInitProc.join();
@@ -51,7 +51,7 @@ public class WithTestkubeStepExecution extends SynchronousNonBlockingStepExecuti
         ProcStarter testkubeSetContextProcStarter = launcher.launch();
         testkubeSetContextProcStarter.stdout(listener).cmds("testkube", "set", "context", "-c", "cloud", "-e",
                 step.getEnvId(),
-                "-o", step.getOrgId(), "-k", step.getApiToken(), "--cloud-root-domain", "testkube.dev");
+                "-o", step.getOrgId(), "-k", step.getApiToken(), "--cloud-root-domain", step.getRootDomain());
         Proc testkubeSetContextProc = testkubeSetContextProcStarter.start();
         int testkubeSetContextExitCode = testkubeSetContextProc.join();
         if (testkubeSetContextExitCode != 0) {
