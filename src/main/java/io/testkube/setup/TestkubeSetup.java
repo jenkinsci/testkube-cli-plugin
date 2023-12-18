@@ -129,7 +129,7 @@ public class TestkubeSetup {
                 URLEncoder.encode(system, StandardCharsets.UTF_8),
                 URLEncoder.encode(architecture, StandardCharsets.UTF_8));
 
-        System.out.println("Downloading the artifact from \"" + artifactUrl + "\"...");
+        TestkubeLogger.println("Downloading the artifact from \"" + artifactUrl + "\"...");
 
         // Download the tar.gz file
         HttpClient client = HttpClient.newHttpClient();
@@ -145,14 +145,14 @@ public class TestkubeSetup {
             Files.createDirectories(Paths.get(binaryDirPath));
             Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
             Files.copy(tarInput, outputPath);
-            System.out.println("Extracted CLI to " + outputPath);
+            TestkubeLogger.println("Extracted CLI to " + outputPath);
 
             // Create symbolic links
             Files.createSymbolicLink(Paths.get(binaryDirPath, "testkube"), outputPath);
-            System.out.println("Linked CLI as " + Paths.get(binaryDirPath, "testkube"));
+            TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "testkube"));
 
             Files.createSymbolicLink(Paths.get(binaryDirPath, "tk"), outputPath);
-            System.out.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
+            TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
         } catch (Exception e) {
             throw new IOException("Failed to download or extract the artifact.", e);
         }
