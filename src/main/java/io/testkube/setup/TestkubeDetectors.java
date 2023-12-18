@@ -81,7 +81,9 @@ public class TestkubeDetectors {
             throw new IOException("Not found any version matching criteria.");
         }
 
-        TestkubeLogger.println("   Latest version: " + version.replaceFirst("^v", ""));
+        version = version.replaceFirst("^v", "");
+
+        TestkubeLogger.println("   Latest version: " + version);
 
         return version;
     }
