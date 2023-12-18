@@ -36,15 +36,15 @@ public class WithTestkubeStepExecution extends SynchronousNonBlockingStepExecuti
 
         // Run the testkube set context command
         ProcStarter testkubeInitProcStarter = launcher.launch();
-        testkubeInitProcStarter.stdout(listener).cmds("testkube", "cloud", "init", "--agent-token",
+        testkubeInitProcStarter.stdout(listener).cmds("testkube", "pro", "init", "--agent-token",
                 step.getAgentToken(),
-                "--org-id", step.getOrgId(), "--env-id", step.getEnvId(), "--cloud-root-domain", step.getRootDomain(),
+                "--org-id", step.getOrgId(), "--env-id", step.getEnvId(), "--pro-root-domain", step.getRootDomain(),
                 "--no-confirm");
         Proc testkubeInitProc = testkubeInitProcStarter.start();
         int testkubeInitExitCode = testkubeInitProc.join();
         if (testkubeInitExitCode != 0) {
             throw new AbortException(
-                    "'testkube cloud init' execution failed with exit code: " + testkubeInitExitCode);
+                    "'testkube pro init' execution failed with exit code: " + testkubeInitExitCode);
         }
 
         // Run the testkube set context command
