@@ -188,11 +188,6 @@ public class TestkubeSetup {
             Files.createSymbolicLink(Paths.get(binaryDirPath, "tk"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
 
-            String currentPath = envVars.get("PATH", "");
-            String updatedPath = currentPath + File.pathSeparator + binaryDirPath;
-            envVars.put("PATH", updatedPath);
-            TestkubeLogger.println("Updated PATH in Jenkins environment: " + updatedPath);
-
         } catch (Exception e) {
             throw new IOException("Failed to download or extract the artifact.", e);
         } finally {
