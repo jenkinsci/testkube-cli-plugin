@@ -158,7 +158,7 @@ public class TestkubeSetup {
                         new BufferedInputStream(new FileInputStream(tempArchivePath.toFile()))))) {
             Files.createDirectories(Paths.get(binaryDirPath));
             TarArchiveEntry entry;
-            while ((entry = (TarArchiveEntry) tarInput.getNextEntry()) != null) {
+            while ((entry = (TarArchiveEntry) tarInput.getNextTarEntry()) != null) {
                 // Create a path for the entry
                 Path entryPath = Paths.get(binaryDirPath, entry.getName());
 
