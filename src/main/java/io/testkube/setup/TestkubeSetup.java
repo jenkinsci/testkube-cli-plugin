@@ -125,6 +125,7 @@ public class TestkubeSetup {
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
                 URLEncoder.encode(version, StandardCharsets.UTF_8),
+                URLEncoder.encode(version, StandardCharsets.UTF_8),
                 URLEncoder.encode(system, StandardCharsets.UTF_8),
                 URLEncoder.encode(architecture, StandardCharsets.UTF_8));
 
