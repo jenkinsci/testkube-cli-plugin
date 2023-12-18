@@ -75,7 +75,7 @@ public class TestkubeSetup {
         }
     }
 
-    public void setup() throws Exception {
+    public void setup(EnvVars envVars) throws Exception {
         setDefaults();
 
         Boolean isCloudMode = (organization != null || environment != null || token != null) ? true : false;
@@ -96,7 +96,7 @@ public class TestkubeSetup {
 
             var versionToInstall = version != null ? version : TestkubeDetectors.detectTestkubeVersion(channel);
 
-            installTestkubeCLI(versionToInstall, system, architecture, binaryPath);
+            installTestkubeCLI(envVars, versionToInstall, system, architecture, binaryPath);
 
         }
 
@@ -126,7 +126,8 @@ public class TestkubeSetup {
                 .orElseGet(() -> writablePaths.isEmpty() ? null : writablePaths.get(0));
     }
 
-    private static void installTestkubeCLI(String version, String system, String architecture, String binaryDirPath)
+    private static void installTestkubeCLI(EnvVars envVars, String version, String system, String architecture,
+            String binaryDirPath)
             throws Exception {
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
@@ -186,6 +187,11 @@ public class TestkubeSetup {
 
             Files.createSymbolicLink(Paths.get(binaryDirPath, "tk"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
+
+            String currentPath = envVars.get("PATH", "");
+            String updatedPath = currentPath + File.pathSeparator + binaryDirPath;
+            envVars.put("PATH", updatedPath);
+            TestkubeLogger.println("Updated PATH in Jenkins environment: " + updatedPath);
 
         } catch (Exception e) {
             throw new IOException("Failed to download or extract the artifact.", e);

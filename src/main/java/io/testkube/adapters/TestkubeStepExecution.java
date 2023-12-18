@@ -22,7 +22,7 @@ public class TestkubeStepExecution extends SynchronousNonBlockingStepExecution<V
 
         TestkubeSetup testkubeSetup = new TestkubeSetup(logger, envVars);
         try {
-            testkubeSetup.setup();
+            testkubeSetup.setup(envVars);
         } catch (Exception e) {
             logger.println("Error during Testkube setup: " + e.getMessage());
             getContext().onFailure(null);
