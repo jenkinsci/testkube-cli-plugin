@@ -135,7 +135,7 @@ public class TestkubeSetup {
         TestkubeLogger.println("Downloading the artifact from \"" + artifactUrl + "\"...");
 
         // Download the tar.gz file
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(artifactUrl))
                 .build();
