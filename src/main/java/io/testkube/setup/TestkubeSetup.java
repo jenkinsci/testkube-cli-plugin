@@ -2,6 +2,7 @@ package io.testkube.setup;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -14,11 +15,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
@@ -139,22 +142,47 @@ public class TestkubeSetup {
 
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
+        // Check response status code and content type
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to download the file. HTTP status: " + response.statusCode());
+        }
+        // Optional: Check Content-Type here if necessary
+
+        // Save the downloaded file to a temporary file
+        Path tempArchivePath = Paths.get(binaryDirPath, "tempArchive.tar.gz");
+        Files.copy(response.body(), tempArchivePath, StandardCopyOption.REPLACE_EXISTING);
+
         // Extract the tar.gz file
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(
-                new GzipCompressorInputStream(new BufferedInputStream(response.body())))) {
+                new GzipCompressorInputStream(
+                        new BufferedInputStream(new FileInputStream(tempArchivePath.toFile()))))) {
             Files.createDirectories(Paths.get(binaryDirPath));
-            Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
-            Files.copy(tarInput, outputPath);
-            TestkubeLogger.println("Extracted CLI to " + outputPath);
+            TarArchiveEntry entry;
+            while ((entry = (TarArchiveEntry) tarInput.getNextEntry()) != null) {
+                // Create a path for the entry
+                Path entryPath = Paths.get(binaryDirPath, entry.getName());
 
-            // Create symbolic links
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    Files.createDirectories(entryPath.getParent());
+                    Files.copy(tarInput, entryPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+
+            // Assuming the CLI binary name is known and consistent, set up symbolic links
+            Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
             Files.createSymbolicLink(Paths.get(binaryDirPath, "testkube"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "testkube"));
 
             Files.createSymbolicLink(Paths.get(binaryDirPath, "tk"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
+
         } catch (Exception e) {
             throw new IOException("Failed to download or extract the artifact.", e);
+        } finally {
+            // Clean up: Delete the temporary file
+            Files.deleteIfExists(tempArchivePath);
         }
     }
 
