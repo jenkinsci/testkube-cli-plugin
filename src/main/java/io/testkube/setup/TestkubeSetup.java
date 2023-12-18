@@ -16,7 +16,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
+import java.util.Set;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -170,8 +173,14 @@ public class TestkubeSetup {
                 }
             }
 
-            // Assuming the CLI binary name is known and consistent, set up symbolic links
             Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
+
+            if ("Darwin".equals(system) || "Linux".equals(system)) {
+                Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr--r--");
+                Files.setPosixFilePermissions(outputPath, perms);
+                TestkubeLogger.println("Set execute permissions for " + outputPath);
+            }
+
             Files.createSymbolicLink(Paths.get(binaryDirPath, "testkube"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "testkube"));
 
