@@ -57,7 +57,9 @@ public class TestkubeDetectors {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     if (line.startsWith("Client Version ")) {
-                        return line.replace("Client Version ", "");
+                        var foundVersion = line.replace("Client Version ", "");
+                        TestkubeLogger.println("   Found version: " + foundVersion);
+                        return foundVersion;
                     }
                 }
             } catch (Exception e) {
