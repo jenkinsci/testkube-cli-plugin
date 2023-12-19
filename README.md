@@ -16,8 +16,6 @@
 
 <p align="center">
   <img title="MIT license" src="https://img.shields.io/badge/License-MIT-yellow.svg"/>
-  <a href="https://github.com/kubeshop/setup-testkube/releases"><img title="Release" src="https://img.shields.io/github/v/release/kubeshop/setup-testkube"/></a>
-  <a href="https://github.com/kubeshop/setup-testkube/releases"><img title="Release date" src="https://img.shields.io/github/release-date/kubeshop/setup-testkube"/></a>
 </p>
 
 <hr>
@@ -109,20 +107,22 @@ pipeline {
 
 ## Inputs
 
-Besides common inputs, there are some different for kubectl and Pro connection.
+In addition to the common inputs, there are specific inputs for connecting to kubectl and Testkube Pro.
 
 ### Common
 
 | Required | Name              | Description                                                                                                                  |
 |:--------:|-------------------|------------------------------------------------------------------------------------------------------------------------------|
-|    ✗     | `TK_CHANNEL`         | Distribution channel to install the latest application from - one of `stable` or `beta` (default: `stable`)                  |
-|    ✗     | `TK_VERSION`         | Static Testkube CLI version to force its installation instead of the latest                                                  |
+|    ✗     | `TK_CHANNEL`      | Distribution channel to install the latest application from - one of `stable` or `beta` (default: `stable`)                  |
+|    ✗     | `TK_VERSION`      | Static Testkube CLI version to force its installation instead of the latest                                                  |
+|    ✗     | `NO_COLOR`        | Disables ANSI coloring, which improves console output if the Jenkins AnsiColor is not configured                             |
+|    ✗     | `TK_DEBUG`        | Set to "1" or "true" to print Java stack trace to the console output                                                         |
 
 ### Kubernetes (`kubectl`)
 
 | Required | Name           | Description                                                                            |
 |:--------:|----------------|----------------------------------------------------------------------------------------|
-|    ✗     | `TK_NAMESPACE`    | Set namespace where Testkube is deployed to (default: `testkube`)                      |
+|    ✗     | `TK_NAMESPACE`    | Set namespace where Testkube is deployed to (default: `testkube`)                   |
 
 ### Pro and Enterprise
 
