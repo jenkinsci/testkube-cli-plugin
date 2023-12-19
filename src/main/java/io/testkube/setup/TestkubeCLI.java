@@ -103,21 +103,35 @@ public class TestkubeCLI {
         }
     }
 
+    private void checkEnvironmentVariables() throws Exception {
+        List<String> missingVariables = new ArrayList<>();
+
+        if (organization == null) {
+            missingVariables.add("organization");
+        }
+
+        if (environment == null) {
+            missingVariables.add("environment");
+        }
+
+        if (apiToken == null) {
+            missingVariables.add("apiToken");
+        }
+
+        if (!missingVariables.isEmpty()) {
+            throw new Exception("The following arguments are missing: " + String.join(", ", missingVariables) +
+                    ". If you want to run in Cloud Mode, please provide these arguments directly or using their corresponding environment variables.");
+        } else {
+            TestkubeLogger.println("Running in cloud mode...");
+        }
+    }
+
     private void peformSetup() throws Exception {
         setDefaults();
 
         Boolean isCloudMode = (organization != null || environment != null || apiToken != null) ? true : false;
 
-        if (isCloudMode) {
-            if (organization == null || environment == null || apiToken == null) {
-                throw new Exception(
-                        "Organization, environment and API token must be specified in cloud mode.");
-            } else {
-                TestkubeLogger.println("Running in cloud mode...");
-            }
-        } else {
-            TestkubeLogger.println("Running in kubectl mode...");
-        }
+        checkEnvironmentVariables();
 
         String binaryPath = findWritableBinaryPath();
         TestkubeLogger.println("Binary path: " + binaryPath);
