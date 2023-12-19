@@ -30,37 +30,52 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import hudson.EnvVars;
 
-public class TestkubeSetup {
+public class TestkubeCLI {
+    private EnvVars envVars;
     private String version;
     private String channel;
     private String namespace;
     private String url;
     private String organization;
     private String environment;
-    private String token;
+    private String apiToken;
+    private Boolean debug;
 
-    public TestkubeSetup(PrintStream logger, EnvVars envVars) {
+    public TestkubeCLI(PrintStream logger, EnvVars envVars) {
         TestkubeLogger.init(logger);
-        this.version = envVars.get("TESTKUBE_VERSION");
-        this.channel = envVars.get("TESTKUBE_CHANNEL");
-        this.namespace = envVars.get("TESTKUBE_NAMESPACE");
-        this.url = envVars.get("TESTKUBE_URL");
-        this.organization = envVars.get("TESTKUBE_ORGANIZATION");
-        this.environment = envVars.get("TESTKUBE_ENVIRONMENT");
-        this.token = envVars.get("TESTKUBE_TOKEN");
+        this.envVars = envVars;
+        this.version = getEnvVar("TK_VERSION", "TESTKUBE_VERSION");
+        this.channel = getEnvVar("TK_CHANNEL", "TESTKUBE_CHANNEL");
+        this.namespace = getEnvVar("TK_NAMESPACE", "TESTKUBE_NAMESPACE");
+        this.url = getEnvVar("TK_URL", "TESTKUBE_URL");
+        this.organization = getEnvVar("TK_ORG", "TESTKUBE_ORG");
+        this.environment = getEnvVar("TK_ENV", "TESTKUBE_ENV");
+        this.apiToken = getEnvVar("TK_API_TOKEN", "TESTKUBE_API_TOKEN");
+        String debugValue = envVars.get("TK_DEBUG");
+        this.debug = debugValue != null && !debugValue.isEmpty();
     }
 
-    public TestkubeSetup(PrintStream logger, String version, String channel, String namespace, String url,
+    public TestkubeCLI(PrintStream logger, EnvVars envVars, String version, String channel, String namespace,
+            String url,
             String organization,
-            String environment, String token) {
+            String environment, String apiToken) {
         TestkubeLogger.init(logger);
+        this.envVars = envVars;
         this.channel = channel;
         this.namespace = namespace;
         this.url = url;
         this.version = version;
         this.organization = organization;
         this.environment = environment;
-        this.token = token;
+        this.apiToken = apiToken;
+    }
+
+    private String getEnvVar(String tkKey, String testkubeKey) {
+        String value = envVars.get(tkKey);
+        if (value == null) {
+            value = envVars.get(testkubeKey);
+        }
+        return value;
     }
 
     private void setDefaults() {
@@ -75,12 +90,37 @@ public class TestkubeSetup {
         }
     }
 
-    public void setup(EnvVars envVars) throws Exception {
+    public boolean setup() {
+        try {
+            peformSetup();
+            return true;
+        } catch (Exception e) {
+            TestkubeLogger.println("Error during setup: " + e.getMessage());
+            if (debug) {
+                e.printStackTrace(TestkubeLogger.getPrintStream());
+            }
+            return false;
+        }
+    }
+
+    private void peformSetup() throws Exception {
         setDefaults();
 
-        Boolean isCloudMode = (organization != null || environment != null || token != null) ? true : false;
+        Boolean isCloudMode = (organization != null || environment != null || apiToken != null) ? true : false;
+
+        if (isCloudMode) {
+            if (organization == null || environment == null || apiToken == null) {
+                throw new Exception(
+                        "Organization, environment and API token must be specified in cloud mode.");
+            } else {
+                TestkubeLogger.println("Running in cloud mode...");
+            }
+        } else {
+            TestkubeLogger.println("Running in kubectl mode...");
+        }
 
         String binaryPath = findWritableBinaryPath();
+        TestkubeLogger.println("Binary path: " + binaryPath);
 
         String architecture = TestkubeDetectors.detectArchitecture();
         String system = TestkubeDetectors.detectSystem();
@@ -96,11 +136,11 @@ public class TestkubeSetup {
 
             var versionToInstall = version != null ? version : TestkubeDetectors.detectTestkubeVersion(channel);
 
-            installTestkubeCLI(envVars, versionToInstall, system, architecture, binaryPath);
+            installCLI(envVars, versionToInstall, system, architecture, binaryPath);
 
         }
 
-        configureTestkubeContext(isCloudMode);
+        configureContext(isCloudMode);
     }
 
     private static String findWritableBinaryPath() throws Exception {
@@ -126,7 +166,7 @@ public class TestkubeSetup {
                 .orElseGet(() -> writablePaths.isEmpty() ? null : writablePaths.get(0));
     }
 
-    private static void installTestkubeCLI(EnvVars envVars, String version, String system, String architecture,
+    private static void installCLI(EnvVars envVars, String version, String system, String architecture,
             String binaryDirPath)
             throws Exception {
         String artifactUrl = String.format(
@@ -146,14 +186,13 @@ public class TestkubeSetup {
 
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-        // Check response status code and content type
+        // Check response status code
         if (response.statusCode() != 200) {
-            throw new IOException("Failed to download the file. HTTP status: " + response.statusCode());
+            throw new IOException("Failed to download the Testkube CLI. HTTP status: " + response.statusCode());
         }
-        // Optional: Check Content-Type here if necessary
 
         // Save the downloaded file to a temporary file
-        Path tempArchivePath = Paths.get(binaryDirPath, "tempArchive.tar.gz");
+        Path tempArchivePath = Paths.get(binaryDirPath, "tempTestkubeArchive.tar.gz");
         Files.copy(response.body(), tempArchivePath, StandardCopyOption.REPLACE_EXISTING);
 
         // Extract the tar.gz file
@@ -196,7 +235,7 @@ public class TestkubeSetup {
         }
     }
 
-    private void configureTestkubeContext(Boolean isCloudMode) throws Exception {
+    private void configureContext(Boolean isCloudMode) throws Exception {
         List<String> command = new ArrayList<>();
         command.add("testkube"); // Command
         command.add("set");
@@ -210,7 +249,7 @@ public class TestkubeSetup {
         } else {
             // Cloud mode
             command.add("--api-key");
-            command.add(token);
+            command.add(apiToken);
             command.add("--cloud-root-domain");
             command.add(url);
             command.add("--org");

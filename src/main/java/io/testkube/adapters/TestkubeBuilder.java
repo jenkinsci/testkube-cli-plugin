@@ -7,7 +7,7 @@ import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.tasks.Builder;
-import io.testkube.setup.TestkubeSetup;
+import io.testkube.setup.TestkubeCLI;
 import hudson.tasks.BuildStepDescriptor;
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -32,15 +32,10 @@ public class TestkubeBuilder extends Builder {
             return false;
         }
 
-        TestkubeSetup testkubeSetup = new TestkubeSetup(listener.getLogger(), envVars);
-        try {
-            testkubeSetup.setup(envVars);
-        } catch (Exception e) {
-            listener.getLogger().println("Error during Testkube setup: " + e.getMessage());
-            return false;
-        }
+        TestkubeCLI testkubeCLI = new TestkubeCLI(listener.getLogger(), envVars);
+        var success = testkubeCLI.setup();
 
-        return true;
+        return success;
     }
 
     @Extension

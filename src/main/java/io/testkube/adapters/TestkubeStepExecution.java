@@ -6,7 +6,7 @@ import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 import hudson.EnvVars;
 
 import hudson.model.TaskListener;
-import io.testkube.setup.TestkubeSetup;
+import io.testkube.setup.TestkubeCLI;
 
 public class TestkubeStepExecution extends SynchronousNonBlockingStepExecution<Void> {
     private static final long serialVersionUID = 1L;
@@ -20,16 +20,17 @@ public class TestkubeStepExecution extends SynchronousNonBlockingStepExecution<V
         var envVars = getContext().get(EnvVars.class);
         var logger = getContext().get(TaskListener.class).getLogger();
 
-        TestkubeSetup testkubeSetup = new TestkubeSetup(logger, envVars);
-        try {
-            testkubeSetup.setup(envVars);
-        } catch (Exception e) {
-            logger.println("Error during Testkube setup: " + e.getMessage());
+        TestkubeCLI testkubeCLI = new TestkubeCLI(logger, envVars);
+        var success = testkubeCLI.setup();
+
+        if (success) {
+            getContext().onSuccess(null);
+
+        } else {
             getContext().onFailure(null);
-            return null;
+
         }
 
-        getContext().onSuccess(null);
         return null;
     }
 }

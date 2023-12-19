@@ -5,7 +5,7 @@ import java.io.PrintStream;
 public class TestkubeLogger {
     private static TestkubeLogger instance = null;
 
-    private PrintStream logger;
+    private PrintStream printStream;
 
     private TestkubeLogger() {
         // private constructor to prevent instantiation
@@ -18,15 +18,19 @@ public class TestkubeLogger {
         return instance;
     }
 
-    public static void init(PrintStream logger) {
-        getInstance().logger = logger;
+    public static void init(PrintStream printStream) {
+        getInstance().printStream = printStream;
     }
 
     public static void println(String msg) {
-        if (getInstance().logger == null) {
+        if (getInstance().printStream == null) {
             return;
         }
-        getInstance().logger.println(msg);
+        getInstance().printStream.println("[Testkube] " + msg);
+    }
+
+    public static PrintStream getPrintStream() {
+        return getInstance().printStream;
     }
 
 }
