@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    <p>This plugin provides build steps for setting up and configuring the Testkube CLI.</p>
+</div>
