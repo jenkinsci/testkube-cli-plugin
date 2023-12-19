@@ -63,7 +63,7 @@ public class TestkubeDetectors {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace(TestkubeLogger.getPrintStream());
+                TestkubeLogger.println("   Failed to detect installed version: " + e.getMessage());
             }
         }
 
