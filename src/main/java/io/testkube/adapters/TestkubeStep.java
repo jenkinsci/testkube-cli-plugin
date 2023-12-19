@@ -27,13 +27,13 @@ public class TestkubeStep extends Step {
 
         @Override
         public String getFunctionName() {
-            return "withTestkube";
+            return "setupTestkube";
         }
 
         @Nonnull
         @Override
         public String getDisplayName() {
-            return "Testkube Step";
+            return "Testkube Setup Step";
         }
 
         @Override
