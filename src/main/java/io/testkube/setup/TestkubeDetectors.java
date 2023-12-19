@@ -63,7 +63,7 @@ public class TestkubeDetectors {
                     }
                 }
             } catch (Exception e) {
-                // Ignore
+                e.printStackTrace(TestkubeLogger.getPrintStream());
             }
         }
 
