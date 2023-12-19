@@ -1,10 +1,11 @@
 package io.testkube.adapters;
 
+import org.jenkinsci.plugins.workflow.steps.BodyInvoker;
 import org.jenkinsci.plugins.workflow.steps.StepContext;
 import org.jenkinsci.plugins.workflow.steps.SynchronousNonBlockingStepExecution;
 
 import hudson.EnvVars;
-
+import hudson.Launcher;
 import hudson.model.TaskListener;
 import io.testkube.setup.TestkubeCLI;
 
@@ -28,8 +29,13 @@ public class TestkubeStepExecution extends SynchronousNonBlockingStepExecution<V
 
         } else {
             getContext().onFailure(null);
-
+            return null;
         }
+
+        TaskListener listener = getContext().get(TaskListener.class);
+        Launcher launcher = getContext().get(Launcher.class);
+        BodyInvoker bodyInvoker = getContext().newBodyInvoker();
+        bodyInvoker.withContexts(listener, launcher).start();
 
         return null;
     }
