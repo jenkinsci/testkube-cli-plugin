@@ -79,6 +79,7 @@ public class TestkubeCLI {
     }
 
     private void setDefaults() {
+        envVars.put("NO_COLOR", "1");
         if (namespace == null) {
             namespace = "testkube";
         }
@@ -279,6 +280,8 @@ public class TestkubeCLI {
 
         if (exitCode != 0) {
             throw new RuntimeException("Failed to configure Testkube context with exit code: " + exitCode);
+        } else {
+            TestkubeLogger.println("Context configured successfully.");
         }
     }
 }
