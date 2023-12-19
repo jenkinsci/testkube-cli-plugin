@@ -40,10 +40,5 @@ public class TestkubeStep extends Step {
         public Set<? extends Class<?>> getRequiredContext() {
             return Collections.singleton(TaskListener.class);
         }
-
-        @Override
-        public boolean takesImplicitBlockArgument() {
-            return true;
-        }
     }
 }
