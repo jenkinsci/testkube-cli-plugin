@@ -141,18 +141,24 @@ public class TestkubeCLI {
         String system = TestkubeDetectors.detectSystem();
 
         TestkubeDetectors.detectKubectl(isCloudMode);
-        var isTestkubeInstalled = TestkubeDetectors.detectTestkubeCLI(channel, version);
 
-        if (!isTestkubeInstalled) {
-            // If forced version is specified
-            if (version != null) {
-                TestkubeLogger.println("Forcing \"" + version.replaceFirst("^v", "") + "\" version...");
+        var installedTestkubeVersion = TestkubeDetectors.detectTestkubeCLI(channel, version);
+        Boolean isInstalled = installedTestkubeVersion != null && !installedTestkubeVersion.isEmpty();
+        String versionToInstall = null;
+
+        if (!isInstalled) {
+            versionToInstall = version != null ? version : TestkubeDetectors.detectTestkubeVersion(channel);
+            TestkubeLogger.println("Installing \"" + versionToInstall + "\" version...");
+        } else if (installedTestkubeVersion != null) {
+            TestkubeLogger.println("Currently installed version: " + installedTestkubeVersion);
+            if (version != null && !installedTestkubeVersion.equals(version)) {
+                TestkubeLogger.println("Force install \"" + version + "\" version...");
+                versionToInstall = version;
             }
+        }
 
-            var versionToInstall = version != null ? version : TestkubeDetectors.detectTestkubeVersion(channel);
-
+        if (versionToInstall != null) {
             installCLI(envVars, versionToInstall, system, architecture, binaryPath);
-
         }
 
         configureContext(isCloudMode);
