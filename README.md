@@ -57,7 +57,7 @@ To use the Jenkins Plugin for the [**Testkube Pro**](https://app.testkube.io), y
 
 Then, pass the `TK_ORG` , `TK_ENV` and `TK_API_TOKEN` environment variables to configure the CLI. Additional parameters can be passed to the CLI directly based on your use case:
 
-```
+```groovy
 pipeline {
     agent any
 
@@ -71,8 +71,8 @@ pipeline {
             steps {
                 script {
                     setupTestkube()
-                    sh 'testkube run test your-test"
-                    sh 'testkube run testsuite your-test-suite --some-arg --other-arg"
+                    sh 'testkube run test your-test'
+                    sh 'testkube run testsuite your-test-suite --some-arg --other-arg'
                 }
             }
         }
@@ -86,7 +86,7 @@ It will be probably unsafe to keep directly in the workflow's YAML configuration
 
 To connect to the self-hosted instance, you need to have `kubectl` configured for accessing your Kubernetes cluster, and simply passing optional namespace, if the Testkube is not deployed in the default `testkube` namespace, i.e.:
 
-```
+```groovy
 pipeline {
     agent any
 
@@ -99,7 +99,7 @@ pipeline {
             steps {
                 script {
                     setupTestkube()
-                    sh 'testkube run test your-test"
+                    sh 'testkube run test your-test'
                 }
             }
         }
