@@ -7,11 +7,11 @@
     <version>4.75</version>
     <relativePath />
   </parent>
-  <groupId>io.testkube</groupId>
-  <artifactId>testkube-jenkins-plugin</artifactId>
+  <groupId>io.jenkins.plugins</groupId>
+  <artifactId>testkube-cli-setup</artifactId>
   <version>${revision}${changelist}</version>
   <packaging>hpi</packaging>
-  <name>Testkube Jenkins Plugin</name>
+  <name>Testkube CLI Setup</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   <licenses>
     <license>
@@ -28,7 +28,6 @@
   <properties>
     <revision>1.0</revision>
     <changelist>-SNAPSHOT</changelist>
-    <!-- https://www.jenkins.io/doc/developer/plugin-development/choosing-jenkins-baseline/ -->
     <jenkins.version>2.426.1</jenkins.version>
     <gitHubRepo>jenkinsci/${project.artifactId}-plugin</gitHubRepo>
     <spotless.check.skip>false</spotless.check.skip>
