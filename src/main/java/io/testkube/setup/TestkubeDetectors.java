@@ -56,6 +56,7 @@ public class TestkubeDetectors {
                 // Find the line with version
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    TestkubeLogger.println(line);
                     if (line.startsWith("Client Version ")) {
                         var foundVersion = line.replace("Client Version ", "");
                         TestkubeLogger.println("   Found version: " + foundVersion);
