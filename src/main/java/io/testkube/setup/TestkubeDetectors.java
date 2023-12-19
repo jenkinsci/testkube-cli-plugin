@@ -56,14 +56,11 @@ public class TestkubeDetectors {
             try {
                 Process versionProcess = versionProcessBuilder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(versionProcess.getInputStream()));
-                // Find the line with version
+                // Extract version from the output
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    TestkubeLogger.println(line);
                     if (line.startsWith("Client Version ")) {
-                        var foundVersion = line.replace("Client Version ", "");
-                        TestkubeLogger.println("   Found version: " + foundVersion);
-                        return foundVersion;
+                        return line.replace("Client Version ", "");
                     }
                 }
             } catch (Exception e) {
