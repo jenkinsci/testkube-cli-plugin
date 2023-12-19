@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -50,6 +51,8 @@ public class TestkubeDetectors {
 
             // Run 'testkube version' command
             ProcessBuilder versionProcessBuilder = new ProcessBuilder("kubectl-testkube", "version");
+            Map<String, String> versionProcessEnv = versionProcessBuilder.environment();
+            versionProcessEnv.put("NO_COLOR", "1");
             try {
                 Process versionProcess = versionProcessBuilder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(versionProcess.getInputStream()));
