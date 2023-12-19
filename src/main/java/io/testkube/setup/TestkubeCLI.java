@@ -216,6 +216,17 @@ public class TestkubeCLI {
         Path tempArchivePath = Paths.get(binaryDirPath, "tempTestkubeArchive.tar.gz");
         Files.copy(response.body(), tempArchivePath, StandardCopyOption.REPLACE_EXISTING);
 
+        Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
+
+        // Remove outputPath if it already exists
+        try {
+            Files.deleteIfExists(outputPath);
+            Files.deleteIfExists(Paths.get(binaryDirPath, "testkube"));
+            Files.deleteIfExists(Paths.get(binaryDirPath, "tk"));
+        } catch (Exception e) {
+            throw new IOException("Failed to delete the existing testkube CLI.", e);
+        }
+
         // Extract the tar.gz file
         try (TarArchiveInputStream tarInput = new TarArchiveInputStream(
                 new GzipCompressorInputStream(
@@ -233,8 +244,6 @@ public class TestkubeCLI {
                     Files.copy(tarInput, entryPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
-
-            Path outputPath = Paths.get(binaryDirPath, "kubectl-testkube");
 
             if ("Darwin".equals(system) || "Linux".equals(system)) {
                 Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr--r--");
