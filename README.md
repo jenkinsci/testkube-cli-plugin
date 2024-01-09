@@ -80,7 +80,8 @@ pipeline {
 }
 ```
 
-It will be probably unsafe to keep directly in the workflow's YAML configuration, so you may want to use [**Jenkins Credentials**](https://www.jenkins.io/doc/book/using/using-credentials/) instead.
+Storing sensitive information directly in the workflow's YAML configuration is likely unsafe.  
+Instead, it's recommended to utilize [**Jenkins Credentials**](https://www.jenkins.io/doc/book/using/using-credentials/), a standard method for handling secrets, as detailed in the Jenkins documentation.  
 
 ### Self-hosted instance
 
@@ -91,8 +92,7 @@ pipeline {
     agent any
 
     environment {
-        TK_NAMESPACE: 'custom-testkube-namespace'
-        TK_URL: 'custom-testkube-url'
+        TK_NAMESPACE = 'custom-testkube-namespace'
     }
     stages {
         stage('Example') {
