@@ -57,7 +57,7 @@ To use the Jenkins Plugin for the [**Testkube Pro**](https://app.testkube.io), y
 
 Then, pass the `TK_ORG` , `TK_ENV` and `TK_API_TOKEN` environment variables to configure the CLI. Additional parameters can be passed to the CLI directly based on your use case:
 
-```
+```groovy
 pipeline {
     agent any
 
@@ -71,8 +71,8 @@ pipeline {
             steps {
                 script {
                     setupTestkube()
-                    sh 'testkube run test your-test"
-                    sh 'testkube run testsuite your-test-suite --some-arg --other-arg"
+                    sh 'testkube run test your-test'
+                    sh 'testkube run testsuite your-test-suite --some-arg --other-arg'
                 }
             }
         }
@@ -80,26 +80,26 @@ pipeline {
 }
 ```
 
-It will be probably unsafe to keep directly in the workflow's YAML configuration, so you may want to use [**Jenkins Credentials**](https://www.jenkins.io/doc/book/using/using-credentials/) instead.
+Storing sensitive information directly in the workflow's YAML configuration is likely unsafe.  
+Instead, it's recommended to utilize [**Jenkins Credentials**](https://www.jenkins.io/doc/book/using/using-credentials/), a standard method for handling secrets, as detailed in the Jenkins documentation.  
 
 ### Self-hosted instance
 
 To connect to the self-hosted instance, you need to have `kubectl` configured for accessing your Kubernetes cluster, and simply passing optional namespace, if the Testkube is not deployed in the default `testkube` namespace, i.e.:
 
-```
+```groovy
 pipeline {
     agent any
 
     environment {
-        TK_NAMESPACE: 'custom-testkube-namespace'
-        TK_URL: 'custom-testkube-url'
+        TK_NAMESPACE = 'custom-testkube-namespace'
     }
     stages {
         stage('Example') {
             steps {
                 script {
                     setupTestkube()
-                    sh 'testkube run test your-test"
+                    sh 'testkube run test your-test'
                 }
             }
         }
