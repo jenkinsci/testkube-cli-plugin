@@ -281,12 +281,14 @@ public class TestkubeCLI {
             // Cloud mode
             command.add("--api-key");
             command.add(Secret.toString(apiToken));
-            command.add("--cloud-root-domain");
-            command.add(url);
             command.add("--org");
             command.add(organization);
             command.add("--env");
             command.add(environment);
+            if (url != null) {
+                command.add("--root-domain");
+                command.add(url);
+            }
         }
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
