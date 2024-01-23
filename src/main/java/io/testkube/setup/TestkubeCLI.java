@@ -29,6 +29,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import hudson.EnvVars;
+import hudson.util.Secret;
 
 public class TestkubeCLI {
     private EnvVars envVars;
@@ -38,7 +39,7 @@ public class TestkubeCLI {
     private String url;
     private String organization;
     private String environment;
-    private String apiToken;
+    private Secret apiToken;
     private Boolean debug;
 
     public TestkubeCLI(PrintStream logger, EnvVars envVars) {
@@ -50,7 +51,7 @@ public class TestkubeCLI {
         this.url = getEnvVar("TK_URL", "TESTKUBE_URL");
         this.organization = getEnvVar("TK_ORG", "TESTKUBE_ORG");
         this.environment = getEnvVar("TK_ENV", "TESTKUBE_ENV");
-        this.apiToken = getEnvVar("TK_API_TOKEN", "TESTKUBE_API_TOKEN");
+        this.apiToken = Secret.fromString(getEnvVar("TK_API_TOKEN", "TESTKUBE_API_TOKEN"));
         String debugValue = envVars.get("TK_DEBUG");
         this.debug = debugValue != null && !debugValue.isEmpty();
     }
@@ -67,7 +68,7 @@ public class TestkubeCLI {
         this.version = version;
         this.organization = organization;
         this.environment = environment;
-        this.apiToken = apiToken;
+        this.apiToken = Secret.fromString(apiToken);
     }
 
     private String getEnvVar(String tkKey, String testkubeKey) {
@@ -279,7 +280,7 @@ public class TestkubeCLI {
         } else {
             // Cloud mode
             command.add("--api-key");
-            command.add(apiToken);
+            command.add(Secret.toString(apiToken));
             command.add("--cloud-root-domain");
             command.add(url);
             command.add("--org");
