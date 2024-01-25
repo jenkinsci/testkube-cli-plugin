@@ -30,7 +30,6 @@ Use it to install Testkube CLI to manage your resources, run tests and test suit
 
 - [Testkube Jenkins Plugin](#testkube-jenkins-plugin)
   - [Table of content](#table-of-content)
-  - [Installation](#installation)
   - [Usage](#usage)
     - [Testkube Pro](#testkube-pro)
     - [Self-hosted instance](#self-hosted-instance)
@@ -41,13 +40,6 @@ Use it to install Testkube CLI to manage your resources, run tests and test suit
     - [Pro and Enterprise](#pro-and-enterprise)
 
 
-## Installation
-
-1. Download the *.hpi file from the [latest release](https://github.com/kubeshop/testkube-jenkins-plugin/releases/latest)
-2. Open your Jenkins dashboard.
-3. Navigate to *Manage Jenkins* > *Plugins*.
-4. Go to the *Advanced settings* tab.
-5. In the *Deploy Plugin* section, browse the downloaded .hpi file and deploy.
 
 ## Usage
 
