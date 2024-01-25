@@ -1,4 +1,4 @@
-package io.testkube.setup;
+package io.jenkins.plugins.testkube.cli.setup;
 
 import java.io.PrintStream;
 
@@ -32,5 +32,4 @@ public class TestkubeLogger {
     public static PrintStream getPrintStream() {
         return getInstance().printStream;
     }
-
 }

@@ -1,4 +1,4 @@
-package io.testkube.setup;
+package io.jenkins.plugins.testkube.cli.setup;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -7,8 +7,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -34,8 +34,7 @@ public class TestkubeDetectors {
         }
     }
 
-    public static String detectTestkubeCLI(String channel, String forcedVersion)
-            throws Exception {
+    public static String detectTestkubeCLI(String channel, String forcedVersion) throws Exception {
         // Check if kubectl-testkube is installed
         ProcessBuilder processBuilder = new ProcessBuilder("which", "kubectl-testkube");
         boolean isInstalled = false;
@@ -55,12 +54,14 @@ public class TestkubeDetectors {
             versionProcessEnv.put("NO_COLOR", "1");
             try {
                 Process versionProcess = versionProcessBuilder.start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(versionProcess.getInputStream()));
-                // Extract version from the output
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.startsWith("Client Version ")) {
-                        return line.replace("Client Version ", "");
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(versionProcess.getInputStream(), StandardCharsets.UTF_8))) {
+                    // Extract version from the output
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("Client Version ")) {
+                            return line.replace("Client Version ", "");
+                        }
                     }
                 }
             } catch (Exception e) {
@@ -77,7 +78,8 @@ public class TestkubeDetectors {
         HttpClient client = HttpClient.newHttpClient();
         String releasesUrl = "https://api.github.com/repos/kubeshop/testkube/releases";
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(channel.equals("stable") ? releasesUrl + "/latest" : releasesUrl)).build();
+                .uri(URI.create(channel.equals("stable") ? releasesUrl + "/latest" : releasesUrl))
+                .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
         if (channel.equals("stable")) {
@@ -136,5 +138,4 @@ public class TestkubeDetectors {
                 throw new Exception("We do not support this architecture yet.");
         }
     }
-
 }

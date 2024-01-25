@@ -1,4 +1,4 @@
-package io.testkube.adapters;
+package io.jenkins.plugins.testkube.cli.adapters;
 
 import hudson.EnvVars;
 import hudson.Extension;
@@ -6,21 +6,17 @@ import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.tasks.Builder;
-import io.testkube.setup.TestkubeCLI;
 import hudson.tasks.BuildStepDescriptor;
-
-import org.kohsuke.stapler.DataBoundConstructor;
-
+import hudson.tasks.Builder;
+import io.jenkins.plugins.testkube.cli.setup.TestkubeCLI;
 import java.io.IOException;
-
 import javax.annotation.Nonnull;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class TestkubeBuilder extends Builder {
 
     @DataBoundConstructor
-    public TestkubeBuilder() {
-    }
+    public TestkubeBuilder() {}
 
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {

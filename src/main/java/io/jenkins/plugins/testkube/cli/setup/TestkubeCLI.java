@@ -1,16 +1,18 @@
-package io.testkube.setup;
+package io.jenkins.plugins.testkube.cli.setup;
 
+import hudson.EnvVars;
+import hudson.util.Secret;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.Collectors;
-import java.io.IOException;
-import java.io.InputStream;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,18 +20,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
+import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-
-import hudson.EnvVars;
-import hudson.util.Secret;
 
 public class TestkubeCLI {
     private EnvVars envVars;
@@ -56,10 +54,16 @@ public class TestkubeCLI {
         this.debug = debugValue != null && !debugValue.isEmpty();
     }
 
-    public TestkubeCLI(PrintStream logger, EnvVars envVars, String version, String channel, String namespace,
+    public TestkubeCLI(
+            PrintStream logger,
+            EnvVars envVars,
+            String version,
+            String channel,
+            String namespace,
             String url,
             String organization,
-            String environment, String apiToken) {
+            String environment,
+            String apiToken) {
         TestkubeLogger.init(logger);
         this.envVars = envVars;
         this.channel = channel;
@@ -121,8 +125,9 @@ public class TestkubeCLI {
         }
 
         if (!missingVariables.isEmpty()) {
-            throw new Exception("The following arguments are missing: " + String.join(", ", missingVariables) +
-                    ". If you want to run in Cloud Mode, please provide these arguments directly or using their corresponding environment variables.");
+            throw new Exception(
+                    "The following arguments are missing: " + String.join(", ", missingVariables)
+                            + ". If you want to run in Cloud Mode, please provide these arguments directly or using their corresponding environment variables.");
         } else {
             TestkubeLogger.println("Running in cloud mode...");
         }
@@ -188,8 +193,8 @@ public class TestkubeCLI {
                 .orElseGet(() -> writablePaths.isEmpty() ? null : writablePaths.get(0));
     }
 
-    private static void installCLI(EnvVars envVars, String version, String system, String architecture,
-            String binaryDirPath)
+    private static void installCLI(
+            EnvVars envVars, String version, String system, String architecture, String binaryDirPath)
             throws Exception {
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
@@ -201,10 +206,11 @@ public class TestkubeCLI {
         TestkubeLogger.println("Downloading the artifact from \"" + artifactUrl + "\"...");
 
         // Download the tar.gz file
-        HttpClient client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(artifactUrl))
+        HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
+        HttpRequest request =
+                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
 
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
@@ -229,9 +235,8 @@ public class TestkubeCLI {
         }
 
         // Extract the tar.gz file
-        try (TarArchiveInputStream tarInput = new TarArchiveInputStream(
-                new GzipCompressorInputStream(
-                        new BufferedInputStream(new FileInputStream(tempArchivePath.toFile()))))) {
+        try (TarArchiveInputStream tarInput = new TarArchiveInputStream(new GzipCompressorInputStream(
+                new BufferedInputStream(new FileInputStream(tempArchivePath.toFile()))))) {
             Files.createDirectories(Paths.get(binaryDirPath));
             TarArchiveEntry entry;
             while ((entry = (TarArchiveEntry) tarInput.getNextTarEntry()) != null) {
@@ -241,7 +246,10 @@ public class TestkubeCLI {
                 if (entry.isDirectory()) {
                     Files.createDirectories(entryPath);
                 } else {
-                    Files.createDirectories(entryPath.getParent());
+                    Path parentDir = entryPath.getParent();
+                    if (parentDir != null) {
+                        Files.createDirectories(parentDir);
+                    }
                     Files.copy(tarInput, entryPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
@@ -258,7 +266,7 @@ public class TestkubeCLI {
             Files.createSymbolicLink(Paths.get(binaryDirPath, "tk"), outputPath);
             TestkubeLogger.println("Linked CLI as " + Paths.get(binaryDirPath, "tk"));
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new IOException("Failed to download or extract the artifact.", e);
         } finally {
             // Clean up: Delete the temporary file

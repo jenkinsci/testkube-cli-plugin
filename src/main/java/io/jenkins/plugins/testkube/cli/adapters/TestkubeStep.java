@@ -1,21 +1,17 @@
-package io.testkube.adapters;
+package io.jenkins.plugins.testkube.cli.adapters;
 
 import hudson.Extension;
 import hudson.model.TaskListener;
-
-import org.jenkinsci.plugins.workflow.steps.*;
-import org.kohsuke.stapler.DataBoundConstructor;
-
-import javax.annotation.Nonnull;
-
 import java.util.Collections;
 import java.util.Set;
+import javax.annotation.Nonnull;
+import org.jenkinsci.plugins.workflow.steps.*;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class TestkubeStep extends Step {
 
     @DataBoundConstructor
-    public TestkubeStep() {
-    }
+    public TestkubeStep() {}
 
     @Override
     public StepExecution start(StepContext context) throws Exception {
