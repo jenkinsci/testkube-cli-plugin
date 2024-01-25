@@ -10,7 +10,7 @@
   <a href="https://testkube.io">Website</a> |
   <a href="https://kubeshop.github.io/testkube">Documentation</a> |
   <a href="https://twitter.com/testkube_io">Twitter</a> |
-  <a href="https://discord.gg/hfq44wtR6Q">Discord</a> |
+  <a href="https://kubeshop.slack.com/archives/C063LGCDV1T/p1706105964047719">Slack</a> |
   <a href="https://kubeshop.io/category/testkube">Blog</a>
 </p>
 
