@@ -140,6 +140,8 @@ public class TestkubeCLI {
 
         if (isCloudMode) {
             checkEnvironmentVariables();
+        } else {
+            TestkubeLogger.println("Using kubeconfig context...");
         }
 
         String binaryPath = findWritableBinaryPath();
