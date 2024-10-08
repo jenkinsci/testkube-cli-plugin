@@ -138,7 +138,9 @@ public class TestkubeCLI {
 
         Boolean isCloudMode = (organization != null || environment != null || apiToken != null) ? true : false;
 
-        checkEnvironmentVariables();
+        if (isCloudMode) {
+            checkEnvironmentVariables();
+        }
 
         String binaryPath = findWritableBinaryPath();
         TestkubeLogger.println("Binary path: " + binaryPath);
