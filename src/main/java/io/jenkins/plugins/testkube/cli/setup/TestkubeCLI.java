@@ -85,16 +85,21 @@ public class TestkubeCLI {
     }
 
     private void setDefaults() {
+        TestkubeLogger.debug("Setting default values...");
         envVars.put("NO_COLOR", "1");
         if (namespace == null) {
             namespace = "testkube";
+            TestkubeLogger.debug("Using default namespace: " + namespace);
         }
         if (channel == null) {
             channel = "stable";
+            TestkubeLogger.debug("Using default channel: " + channel);
         }
         if (url == null) {
             url = "testkube.io";
+            TestkubeLogger.debug("Using default URL: " + url);
         }
+        TestkubeLogger.debug("Environment variables after defaults: " + envVars);
     }
 
     public boolean setup() {
@@ -257,9 +262,11 @@ public class TestkubeCLI {
     }
 
     private static String findWritableBinaryPath() throws Exception {
+        TestkubeLogger.debug("Searching for writable binary path...");
         List<String> preferredPaths = Arrays.asList("/usr/local/bin", "/usr/bin");
-
         String pathEnv = System.getenv("PATH");
+        TestkubeLogger.debug("System PATH: " + pathEnv);
+
         if (pathEnv == null || pathEnv.isEmpty()) {
             throw new IllegalStateException("PATH environment variable is not set.");
         }
@@ -282,13 +289,17 @@ public class TestkubeCLI {
     private static void installCLI(
             EnvVars envVars, String version, String system, String architecture, String binaryDirPath)
             throws Exception {
+        TestkubeLogger.debug("Starting CLI installation...");
+        TestkubeLogger.debug(
+                String.format("Installation parameters: version=%s, system=%s, architecture=%s, binaryDirPath=%s",
+                        version, system, architecture, binaryDirPath));
+
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
                 URLEncoder.encode(version, StandardCharsets.UTF_8),
                 URLEncoder.encode(version, StandardCharsets.UTF_8),
                 URLEncoder.encode(system, StandardCharsets.UTF_8),
                 URLEncoder.encode(architecture, StandardCharsets.UTF_8));
-
         TestkubeLogger.println("Downloading the artifact from \"" + artifactUrl + "\"...");
 
         // Download the tar.gz file
@@ -296,7 +307,6 @@ public class TestkubeCLI {
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
-
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -384,9 +394,12 @@ public class TestkubeCLI {
             }
         }
 
+        TestkubeLogger.debug("Executing command: " + String.join(" ", command));
+
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.inheritIO();
         Process process = processBuilder.start();
+
         int exitCode = process.waitFor();
 
         if (exitCode != 0) {

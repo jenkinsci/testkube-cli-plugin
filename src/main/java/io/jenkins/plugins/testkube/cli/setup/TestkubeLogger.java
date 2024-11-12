@@ -15,6 +15,12 @@ public class TestkubeLogger {
         debug = debugMode;
     }
 
+    public static void debug(String msg) {
+        if (printStream != null && debug) {
+            printStream.println("[Testkube][DEBUG] " + msg);
+        }
+    }
+
     public static void println(String msg) {
         if (printStream != null) {
             printStream.println("[Testkube] " + msg);
