@@ -1,35 +1,69 @@
 package io.jenkins.plugins.testkube.cli.setup;
 
 import java.io.PrintStream;
+import java.util.List;
 
 public class TestkubeLogger {
-    private static TestkubeLogger instance = null;
+    private static PrintStream printStream;
+    private static boolean debug;
 
-    private PrintStream printStream;
-
-    private TestkubeLogger() {
-        // private constructor to prevent instantiation
+    public static void setPrintStream(PrintStream stream) {
+        printStream = stream;
     }
 
-    private static TestkubeLogger getInstance() {
-        if (instance == null) {
-            instance = new TestkubeLogger();
+    public static void setDebug(boolean debugMode) {
+        debug = debugMode;
+    }
+
+    public static void debug(String msg) {
+        if (printStream != null && debug) {
+            printStream.println("[Testkube][DEBUG] " + msg);
         }
-        return instance;
-    }
-
-    public static void init(PrintStream printStream) {
-        getInstance().printStream = printStream;
     }
 
     public static void println(String msg) {
-        if (getInstance().printStream == null) {
+        if (printStream != null) {
+            printStream.println("[Testkube] " + msg);
+        }
+    }
+
+    public static void error(String msg, Throwable error) {
+        if (printStream == null) {
             return;
         }
-        getInstance().printStream.println("[Testkube] " + msg);
+
+        // Print main error message
+        printStream.println("[Testkube] ERROR: " + msg);
+
+        // Handle TestkubeException specially
+        if (error instanceof TestkubeException) {
+            TestkubeException te = (TestkubeException) error;
+
+            // Print details if available
+            if (te.getDetails() != null && !te.getDetails().isEmpty()) {
+                printStream.println("\nDetails: " + te.getDetails());
+            }
+
+            // Print solutions if available
+            List<String> solutions = te.getPossibleSolutions();
+            if (!solutions.isEmpty()) {
+                printStream.println("\nPossible solutions:");
+                for (int i = 0; i < solutions.size(); i++) {
+                    printStream.println((i + 1) + ". " + solutions.get(i));
+                }
+            }
+        }
+
+        // Handle stack trace based on debug mode
+        if (debug) {
+            printStream.println("\nFull error details (debug mode):");
+            error.printStackTrace(printStream);
+        } else {
+            printStream.println("\nTip: Run with TK_DEBUG=true to see full stack trace");
+        }
     }
 
     public static PrintStream getPrintStream() {
-        return getInstance().printStream;
+        return printStream;
     }
 }

@@ -40,8 +40,8 @@ public class TestkubeCLI {
     private Secret apiToken;
     private Boolean debug;
 
-    public TestkubeCLI(PrintStream logger, EnvVars envVars) {
-        TestkubeLogger.init(logger);
+    public TestkubeCLI(PrintStream printStream, EnvVars envVars) {
+        TestkubeLogger.setPrintStream(printStream);
         this.envVars = envVars;
         this.version = getEnvVar("TK_VERSION", "TESTKUBE_VERSION");
         this.channel = getEnvVar("TK_CHANNEL", "TESTKUBE_CHANNEL");
@@ -52,10 +52,11 @@ public class TestkubeCLI {
         this.apiToken = Secret.fromString(getEnvVar("TK_API_TOKEN", "TESTKUBE_API_TOKEN"));
         String debugValue = envVars.get("TK_DEBUG");
         this.debug = debugValue != null && !debugValue.isEmpty();
+        TestkubeLogger.setDebug(this.debug);
     }
 
     public TestkubeCLI(
-            PrintStream logger,
+            PrintStream printStream,
             EnvVars envVars,
             String version,
             String channel,
@@ -64,7 +65,7 @@ public class TestkubeCLI {
             String organization,
             String environment,
             String apiToken) {
-        TestkubeLogger.init(logger);
+        TestkubeLogger.setPrintStream(printStream);
         this.envVars = envVars;
         this.channel = channel;
         this.namespace = namespace;
@@ -84,16 +85,21 @@ public class TestkubeCLI {
     }
 
     private void setDefaults() {
+        TestkubeLogger.debug("Setting default values...");
         envVars.put("NO_COLOR", "1");
         if (namespace == null) {
             namespace = "testkube";
+            TestkubeLogger.debug("Using default namespace: " + namespace);
         }
         if (channel == null) {
             channel = "stable";
+            TestkubeLogger.debug("Using default channel: " + channel);
         }
         if (url == null) {
             url = "testkube.io";
+            TestkubeLogger.debug("Using default URL: " + url);
         }
+        TestkubeLogger.debug("Environment variables after defaults: " + envVars);
     }
 
     public boolean setup() {
@@ -101,10 +107,7 @@ public class TestkubeCLI {
             peformSetup();
             return true;
         } catch (Exception e) {
-            TestkubeLogger.println("Error during setup: " + e.getMessage());
-            if (debug) {
-                e.printStackTrace(TestkubeLogger.getPrintStream());
-            }
+            TestkubeLogger.error("Setup failed", e);
             return false;
         }
     }
@@ -143,39 +146,123 @@ public class TestkubeCLI {
         }
 
         String binaryPath = findWritableBinaryPath();
+        if (binaryPath == null) {
+            throw new TestkubeException(
+                    "Failed to find a writable directory to install the Testkube CLI.",
+                    "No writable directory was detected in the Jenkins pipeline environment.",
+                    Arrays.asList(
+                            "Verify that common binary directories (/usr/local/bin, /usr/bin) are writable by the Jenkins user",
+                            "Check directory permissions using 'ls -la' in your pipeline",
+                            "Create a dedicated writable directory in the Jenkins home directory",
+                            "Ensure the PATH environment variable includes writable directories"));
+        }
         TestkubeLogger.println("Binary path: " + binaryPath);
 
         String architecture = TestkubeDetectors.detectArchitecture();
         String system = TestkubeDetectors.detectSystem();
 
-        TestkubeDetectors.detectKubectl(isCloudMode);
+        checkSystemCompatibility(system, architecture);
 
-        var installedTestkubeVersion = TestkubeDetectors.detectTestkubeCLI(channel, version);
-        Boolean isInstalled = installedTestkubeVersion != null && !installedTestkubeVersion.isEmpty();
-        String versionToInstall = null;
+        try {
+            TestkubeDetectors.detectKubectl(isCloudMode);
+        } catch (Exception e) {
+            throw new TestkubeException(
+                    "Kubectl verification failed",
+                    e.getMessage(),
+                    Arrays.asList(
+                            "Ensure kubectl is installed in your pipeline environment",
+                            "Verify kubectl is available in the system PATH",
+                            "Check if the Kubernetes cluster configuration is accessible",
+                            "Run 'kubectl version' manually to verify the installation"));
+        }
 
-        if (!isInstalled) {
-            versionToInstall = version != null ? version : TestkubeDetectors.detectTestkubeVersion(channel);
-            TestkubeLogger.println("Installing \"" + versionToInstall + "\" version...");
-        } else if (installedTestkubeVersion != null) {
-            TestkubeLogger.println("Currently installed version: " + installedTestkubeVersion);
-            if (version != null && !installedTestkubeVersion.equals(version)) {
-                TestkubeLogger.println("Force install \"" + version + "\" version...");
-                versionToInstall = version;
+        var installedVersion = TestkubeDetectors.detectTestkubeCLI(channel, version);
+        String versionToInstall = determineVersionToInstall(installedVersion);
+
+        try {
+            if (versionToInstall != null) {
+                installCLI(envVars, versionToInstall, system, architecture, binaryPath);
             }
+        } catch (IOException e) {
+            throw new TestkubeException(
+                    "Failed to install Testkube CLI",
+                    e.getMessage(),
+                    Arrays.asList(
+                            "Check network connectivity to GitHub releases",
+                            "Verify write permissions in the installation directory",
+                            "Ensure sufficient disk space is available",
+                            "Try manually downloading the release from GitHub"));
         }
 
-        if (versionToInstall != null) {
-            installCLI(envVars, versionToInstall, system, architecture, binaryPath);
+        try {
+            configureContext(isCloudMode);
+        } catch (Exception e) {
+            throw new TestkubeException(
+                    "Context configuration failed",
+                    e.getMessage(),
+                    Arrays.asList(
+                            "Verify your API token is valid and not expired",
+                            "Check if the organization and environment IDs are correct",
+                            "Ensure the Testkube API endpoint is accessible",
+                            "Verify network connectivity to the Testkube service"));
+        }
+    }
+
+    private String determineVersionToInstall(String installedVersion) throws TestkubeException {
+        try {
+            if (installedVersion == null) {
+                String detectedVersion = version;
+                if (detectedVersion == null) {
+                    try {
+                        detectedVersion = TestkubeDetectors.detectTestkubeVersion(channel);
+                    } catch (Exception e) {
+                        throw new TestkubeException("Failed to detect Testkube version", e.getMessage());
+                    }
+                }
+                return detectedVersion;
+            }
+
+            if (version != null && !installedVersion.equals(version)) {
+                TestkubeLogger.println("Force install \"" + version + "\" version...");
+                return version;
+            }
+
+            return null;
+        } catch (Exception e) {
+            if (e instanceof TestkubeException) {
+                throw (TestkubeException) e;
+            }
+            throw new TestkubeException(
+                    "Version detection failed",
+                    e.getMessage(),
+                    Arrays.asList(
+                            "Try specifying a version explicitly using TK_VERSION",
+                            "Check if the requested version exists",
+                            "Verify the version format is correct"));
+        }
+    }
+
+    private void checkSystemCompatibility(String system, String architecture) throws TestkubeException {
+        List<String> supportedSystems = Arrays.asList("Linux", "Darwin", "Windows");
+        List<String> supportedArchitectures = Arrays.asList("x86_64", "arm64", "i386");
+
+        if (!supportedSystems.contains(system)) {
+            throw new TestkubeException(
+                    "Unsupported operating system", "Operating system '" + system + "' is not supported");
         }
 
-        configureContext(isCloudMode);
+        if (!supportedArchitectures.contains(architecture)) {
+            throw new TestkubeException(
+                    "Unsupported system architecture", "Architecture '" + architecture + "' is not supported");
+        }
     }
 
     private static String findWritableBinaryPath() throws Exception {
+        TestkubeLogger.debug("Searching for writable binary path...");
         List<String> preferredPaths = Arrays.asList("/usr/local/bin", "/usr/bin");
-
         String pathEnv = System.getenv("PATH");
+        TestkubeLogger.debug("System PATH: " + pathEnv);
+
         if (pathEnv == null || pathEnv.isEmpty()) {
             throw new IllegalStateException("PATH environment variable is not set.");
         }
@@ -198,13 +285,17 @@ public class TestkubeCLI {
     private static void installCLI(
             EnvVars envVars, String version, String system, String architecture, String binaryDirPath)
             throws Exception {
+        TestkubeLogger.debug("Starting CLI installation...");
+        TestkubeLogger.debug(String.format(
+                "Installation parameters: version=%s, system=%s, architecture=%s, binaryDirPath=%s",
+                version, system, architecture, binaryDirPath));
+
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
                 URLEncoder.encode(version, StandardCharsets.UTF_8),
                 URLEncoder.encode(version, StandardCharsets.UTF_8),
                 URLEncoder.encode(system, StandardCharsets.UTF_8),
                 URLEncoder.encode(architecture, StandardCharsets.UTF_8));
-
         TestkubeLogger.println("Downloading the artifact from \"" + artifactUrl + "\"...");
 
         // Download the tar.gz file
@@ -213,7 +304,6 @@ public class TestkubeCLI {
                 .build();
         HttpRequest request =
                 HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
-
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -291,9 +381,9 @@ public class TestkubeCLI {
             // Cloud mode
             command.add("--api-key");
             command.add(Secret.toString(apiToken));
-            command.add("--org");
+            command.add("--org-id");
             command.add(organization);
-            command.add("--env");
+            command.add("--env-id");
             command.add(environment);
             if (url != null) {
                 command.add("--root-domain");
@@ -301,9 +391,12 @@ public class TestkubeCLI {
             }
         }
 
+        TestkubeLogger.debug("Executing command: " + String.join(" ", command));
+
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.inheritIO();
         Process process = processBuilder.start();
+
         int exitCode = process.waitFor();
 
         if (exitCode != 0) {
