@@ -216,9 +216,7 @@ public class TestkubeCLI {
                     try {
                         detectedVersion = TestkubeDetectors.detectTestkubeVersion(channel);
                     } catch (Exception e) {
-                        throw new TestkubeException(
-                                "Failed to detect Testkube version",
-                                e.getMessage());
+                        throw new TestkubeException("Failed to detect Testkube version", e.getMessage());
                     }
                 }
                 return detectedVersion;
@@ -250,14 +248,12 @@ public class TestkubeCLI {
 
         if (!supportedSystems.contains(system)) {
             throw new TestkubeException(
-                    "Unsupported operating system",
-                    "Operating system '" + system + "' is not supported");
+                    "Unsupported operating system", "Operating system '" + system + "' is not supported");
         }
 
         if (!supportedArchitectures.contains(architecture)) {
             throw new TestkubeException(
-                    "Unsupported system architecture",
-                    "Architecture '" + architecture + "' is not supported");
+                    "Unsupported system architecture", "Architecture '" + architecture + "' is not supported");
         }
     }
 
@@ -290,9 +286,9 @@ public class TestkubeCLI {
             EnvVars envVars, String version, String system, String architecture, String binaryDirPath)
             throws Exception {
         TestkubeLogger.debug("Starting CLI installation...");
-        TestkubeLogger.debug(
-                String.format("Installation parameters: version=%s, system=%s, architecture=%s, binaryDirPath=%s",
-                        version, system, architecture, binaryDirPath));
+        TestkubeLogger.debug(String.format(
+                "Installation parameters: version=%s, system=%s, architecture=%s, binaryDirPath=%s",
+                version, system, architecture, binaryDirPath));
 
         String artifactUrl = String.format(
                 "https://github.com/kubeshop/testkube/releases/download/v%s/testkube_%s_%s_%s.tar.gz",
@@ -306,7 +302,8 @@ public class TestkubeCLI {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
+        HttpRequest request =
+                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
