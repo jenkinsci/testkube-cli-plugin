@@ -40,8 +40,8 @@ public class TestkubeCLI {
     private Secret apiToken;
     private Boolean debug;
 
-    public TestkubeCLI(PrintStream logger, EnvVars envVars) {
-        TestkubeLogger.init(logger);
+    public TestkubeCLI(PrintStream printStream, EnvVars envVars) {
+        TestkubeLogger.setPrintStream(printStream);
         this.envVars = envVars;
         this.version = getEnvVar("TK_VERSION", "TESTKUBE_VERSION");
         this.channel = getEnvVar("TK_CHANNEL", "TESTKUBE_CHANNEL");
@@ -52,10 +52,11 @@ public class TestkubeCLI {
         this.apiToken = Secret.fromString(getEnvVar("TK_API_TOKEN", "TESTKUBE_API_TOKEN"));
         String debugValue = envVars.get("TK_DEBUG");
         this.debug = debugValue != null && !debugValue.isEmpty();
+        TestkubeLogger.setDebug(this.debug);
     }
 
     public TestkubeCLI(
-            PrintStream logger,
+            PrintStream printStream,
             EnvVars envVars,
             String version,
             String channel,
@@ -64,7 +65,7 @@ public class TestkubeCLI {
             String organization,
             String environment,
             String apiToken) {
-        TestkubeLogger.init(logger);
+        TestkubeLogger.setPrintStream(printStream);
         this.envVars = envVars;
         this.channel = channel;
         this.namespace = namespace;
@@ -101,10 +102,7 @@ public class TestkubeCLI {
             peformSetup();
             return true;
         } catch (Exception e) {
-            TestkubeLogger.println("Error during setup: " + e.getMessage());
-            if (debug) {
-                e.printStackTrace(TestkubeLogger.getPrintStream());
-            }
+            TestkubeLogger.error("Setup failed", e);
             return false;
         }
     }
