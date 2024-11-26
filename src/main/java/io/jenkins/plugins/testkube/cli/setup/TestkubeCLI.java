@@ -3,10 +3,12 @@ package io.jenkins.plugins.testkube.cli.setup;
 import hudson.EnvVars;
 import hudson.util.Secret;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -394,15 +396,53 @@ public class TestkubeCLI {
         TestkubeLogger.debug("Executing command: " + String.join(" ", command));
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.inheritIO();
+
+        // Set NO_COLOR environment variable to disable color output in the process
+        processBuilder.environment().put("NO_COLOR", "1");
+
+        // Create the process without inheritIO
         Process process = processBuilder.start();
 
+        // Create separate threads to handle stdout and stderr
+        Thread outputThread = new Thread(() -> {
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    TestkubeLogger.println("[CLI] " + line);
+                }
+            } catch (IOException e) {
+                TestkubeLogger.error("Error reading CLI output", e);
+            }
+        });
+
+        Thread errorThread = new Thread(() -> {
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    TestkubeLogger.println("[CLI] " + line);
+                }
+            } catch (IOException e) {
+                TestkubeLogger.error("Error reading CLI error stream", e);
+            }
+        });
+
+        // Start both threads
+        outputThread.start();
+        errorThread.start();
+
+        // Wait for the process to complete
         int exitCode = process.waitFor();
+
+        // Wait for the output threads to finish
+        outputThread.join();
+        errorThread.join();
 
         if (exitCode != 0) {
             throw new RuntimeException("Failed to configure Testkube context with exit code: " + exitCode);
         } else {
-            TestkubeLogger.println("Context configured successfully.");
+            TestkubeLogger.println("[CLI] Context configured successfully.");
         }
     }
 }
