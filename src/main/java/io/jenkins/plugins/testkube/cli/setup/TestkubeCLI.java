@@ -4,7 +4,6 @@ import hudson.EnvVars;
 import hudson.util.Secret;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -150,12 +149,13 @@ public class TestkubeCLI {
         if (binaryPath == null) {
             throw new TestkubeException(
                     "Failed to find a writable directory to install the Testkube CLI.",
-                    "No writable directory was detected in the Jenkins pipeline environment.",
+                    "No writable user directories or system binary paths were found.",
                     Arrays.asList(
-                            "Verify that common binary directories (/usr/local/bin, /usr/bin) are writable by the Jenkins user",
-                            "Check directory permissions using 'ls -la' in your pipeline",
-                            "Create a dedicated writable directory in the Jenkins home directory",
-                            "Ensure the PATH environment variable includes writable directories"));
+                            "Verify that you have write permissions to your home directory (~)",
+                            "Create and ensure write access to user binary directories (~/.local/bin or ~/bin)",
+                            "If using system directories, contact your system administrator to grant write "
+                                    + "permissions to common binary paths (/usr/local/bin, /usr/bin, /opt/bin, /bin)",
+                            "Review the current directory permissions in all mentioned locations"));
         }
         TestkubeLogger.println("Found writable path for installing Testkube's CLI: " + binaryPath);
 
@@ -261,28 +261,35 @@ public class TestkubeCLI {
     private static String findWritableBinaryPath() {
         TestkubeLogger.debug("Searching for writable binary path...");
 
-        List<String> commonBinaryPaths = Arrays.asList("/usr/local/bin", "/usr/bin", "/opt/bin", "/bin");
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            // Check $HOME/.local/bin
+            String localBinPath = Paths.get(userHome, ".local", "bin").toString();
+            if (isWritablePath(localBinPath)) {
+                TestkubeLogger.debug("Found writable ~/.local/bin directory: " + localBinPath);
+                return localBinPath;
+            }
 
+            // Check $HOME/bin
+            String homeBinPath = Paths.get(userHome, "bin").toString();
+            if (isWritablePath(homeBinPath)) {
+                TestkubeLogger.debug("Found writable ~/bin directory: " + homeBinPath);
+                return homeBinPath;
+            }
+
+            // Check $HOME
+            if (isWritablePath(userHome)) {
+                TestkubeLogger.debug("Using writable user home directory: " + userHome);
+                return userHome;
+            }
+        }
+
+        // Check common binary paths
+        List<String> commonBinaryPaths = Arrays.asList("/usr/local/bin", "/usr/bin", "/opt/bin", "/bin");
         for (String path : commonBinaryPaths) {
             if (isWritablePath(path)) {
                 TestkubeLogger.debug("Found writable common binary path: " + path);
                 return path;
-            }
-        }
-
-        String userHome = System.getProperty("user.home");
-        if (userHome != null && isWritablePath(userHome)) {
-            TestkubeLogger.debug("Using writable user home directory: " + userHome);
-            return userHome;
-        }
-
-        String pathEnv = System.getenv("PATH");
-        if (pathEnv != null && !pathEnv.isEmpty()) {
-            for (String path : pathEnv.split(File.pathSeparator)) {
-                if (!path.isEmpty() && isWritablePath(path)) {
-                    TestkubeLogger.debug("Found writable PATH directory: " + path);
-                    return path;
-                }
             }
         }
 
