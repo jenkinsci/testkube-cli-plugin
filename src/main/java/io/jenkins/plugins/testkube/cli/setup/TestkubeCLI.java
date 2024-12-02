@@ -185,14 +185,7 @@ public class TestkubeCLI {
                 installCLI(envVars, versionToInstall, system, architecture, binaryPath);
             }
         } catch (IOException e) {
-            throw new TestkubeException(
-                    "Failed to install Testkube CLI",
-                    e.getMessage(),
-                    Arrays.asList(
-                            "Check network connectivity to GitHub releases",
-                            "Verify write permissions in the installation directory",
-                            "Ensure sufficient disk space is available",
-                            "Try manually downloading the release from GitHub"));
+            throw new TestkubeException("Failed to install Testkube CLI", e.getMessage());
         }
 
         try {
@@ -203,9 +196,7 @@ public class TestkubeCLI {
                     e.getMessage(),
                     Arrays.asList(
                             "Verify your API token is valid and not expired",
-                            "Check if the organization and environment IDs are correct",
-                            "Ensure the Testkube API endpoint is accessible",
-                            "Verify network connectivity to the Testkube service"));
+                            "Check if the organization and environment IDs are correct"));
         }
     }
 
