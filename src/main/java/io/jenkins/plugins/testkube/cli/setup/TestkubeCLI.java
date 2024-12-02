@@ -149,13 +149,12 @@ public class TestkubeCLI {
         if (binaryPath == null) {
             throw new TestkubeException(
                     "Failed to find a writable directory to install the Testkube CLI.",
-                    "No writable directory was detected in the Jenkins pipeline environment.",
+                    "No writable user directories or system binary paths were found.",
                     Arrays.asList(
-                            "Verify that common binary directories (/usr/local/bin, /usr/bin) are writable by the Jenkins user",
-                            "Check directory permissions using 'ls -la' in your pipeline",
-                            "Create a dedicated writable directory in the Jenkins home directory",
-                            "Ensure the PATH environment variable includes writable directories"));
-        }
+                            "Verify that you have write permissions to your home directory (~)",
+                            "Create and ensure write access to user binary directories (~/.local/bin or ~/bin)",
+                            "If using system directories, contact your system administrator to grant write permissions to common binary paths (/usr/local/bin, /usr/bin, /opt/bin, /bin)",
+                            "Review the current directory permissions in all mentioned locations"));
         TestkubeLogger.println("Found writable path for installing Testkube's CLI: " + binaryPath);
 
         String architecture = TestkubeDetectors.detectArchitecture();
@@ -325,8 +324,7 @@ public class TestkubeCLI {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        HttpRequest request =
-                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -426,8 +424,8 @@ public class TestkubeCLI {
 
         // Create separate threads to handle stdout and stderr
         Thread outputThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
@@ -438,8 +436,8 @@ public class TestkubeCLI {
         });
 
         Thread errorThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
