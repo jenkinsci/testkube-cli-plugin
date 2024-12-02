@@ -293,17 +293,6 @@ public class TestkubeCLI {
             }
         }
 
-        // Check PATH environment directories as last resort
-        String pathEnv = System.getenv("PATH");
-        if (pathEnv != null && !pathEnv.isEmpty()) {
-            for (String path : pathEnv.split(File.pathSeparator)) {
-                if (!path.isEmpty() && isWritablePath(path)) {
-                    TestkubeLogger.debug("Found writable PATH directory: " + path);
-                    return path;
-                }
-            }
-        }
-
         return null;
     }
 
@@ -337,8 +326,7 @@ public class TestkubeCLI {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        HttpRequest request =
-                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -438,8 +426,8 @@ public class TestkubeCLI {
 
         // Create separate threads to handle stdout and stderr
         Thread outputThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
@@ -450,8 +438,8 @@ public class TestkubeCLI {
         });
 
         Thread errorThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
