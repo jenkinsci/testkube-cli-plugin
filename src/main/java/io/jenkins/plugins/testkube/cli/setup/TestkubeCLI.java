@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -158,7 +157,7 @@ public class TestkubeCLI {
                             "Create a dedicated writable directory in the Jenkins home directory",
                             "Ensure the PATH environment variable includes writable directories"));
         }
-        TestkubeLogger.println("Binary path: " + binaryPath);
+        TestkubeLogger.println("Found writable path for installing Testkube's CLI: " + binaryPath);
 
         String architecture = TestkubeDetectors.detectArchitecture();
         String system = TestkubeDetectors.detectSystem();
@@ -259,29 +258,49 @@ public class TestkubeCLI {
         }
     }
 
-    private static String findWritableBinaryPath() throws Exception {
+    private static String findWritableBinaryPath() {
         TestkubeLogger.debug("Searching for writable binary path...");
-        List<String> preferredPaths = Arrays.asList("/usr/local/bin", "/usr/bin");
-        String pathEnv = System.getenv("PATH");
-        TestkubeLogger.debug("System PATH: " + pathEnv);
 
-        if (pathEnv == null || pathEnv.isEmpty()) {
-            throw new IllegalStateException("PATH environment variable is not set.");
+        List<String> commonBinaryPaths = Arrays.asList(
+                "/usr/local/bin",
+                "/usr/bin",
+                "/opt/bin",
+                "/bin");
+
+        for (String path : commonBinaryPaths) {
+            if (isWritablePath(path)) {
+                TestkubeLogger.debug("Found writable common binary path: " + path);
+                return path;
+            }
         }
 
-        List<String> detectedPaths = Arrays.stream(pathEnv.split(File.pathSeparator))
-                .filter(path -> !path.isEmpty())
-                .sorted((a, b) -> Integer.compare(a.length(), b.length()))
-                .collect(Collectors.toList());
+        String userHome = System.getProperty("user.home");
+        if (userHome != null && isWritablePath(userHome)) {
+            TestkubeLogger.debug("Using writable user home directory: " + userHome);
+            return userHome;
+        }
 
-        List<String> writablePaths = detectedPaths.stream()
-                .filter(path -> Files.isWritable(Paths.get(path)))
-                .collect(Collectors.toList());
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv != null && !pathEnv.isEmpty()) {
+            for (String path : pathEnv.split(File.pathSeparator)) {
+                if (!path.isEmpty() && isWritablePath(path)) {
+                    TestkubeLogger.debug("Found writable PATH directory: " + path);
+                    return path;
+                }
+            }
+        }
 
-        return preferredPaths.stream()
-                .filter(writablePaths::contains)
-                .findFirst()
-                .orElseGet(() -> writablePaths.isEmpty() ? null : writablePaths.get(0));
+        return null;
+    }
+
+    private static boolean isWritablePath(String path) {
+        try {
+            Path directoryPath = Paths.get(path);
+            return Files.exists(directoryPath) && Files.isDirectory(directoryPath) && Files.isWritable(directoryPath);
+        } catch (Exception e) {
+            TestkubeLogger.debug("Error while checking if path " + path + " is writable: " + e.getMessage());
+            return false;
+        }
     }
 
     private static void installCLI(
@@ -304,8 +323,7 @@ public class TestkubeCLI {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        HttpRequest request =
-                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -405,8 +423,8 @@ public class TestkubeCLI {
 
         // Create separate threads to handle stdout and stderr
         Thread outputThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
@@ -417,8 +435,8 @@ public class TestkubeCLI {
         });
 
         Thread errorThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
