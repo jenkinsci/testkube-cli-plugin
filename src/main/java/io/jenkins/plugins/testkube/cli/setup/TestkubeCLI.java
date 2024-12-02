@@ -261,8 +261,31 @@ public class TestkubeCLI {
     private static String findWritableBinaryPath() {
         TestkubeLogger.debug("Searching for writable binary path...");
 
-        List<String> commonBinaryPaths = Arrays.asList("/usr/local/bin", "/usr/bin", "/opt/bin", "/bin");
+        String userHome = System.getProperty("user.home");
+        if (userHome != null) {
+            // Check $HOME/.local/bin
+            String localBinPath = Paths.get(userHome, ".local", "bin").toString();
+            if (isWritablePath(localBinPath)) {
+                TestkubeLogger.debug("Found writable ~/.local/bin directory: " + localBinPath);
+                return localBinPath;
+            }
 
+            // Check $HOME/bin
+            String homeBinPath = Paths.get(userHome, "bin").toString();
+            if (isWritablePath(homeBinPath)) {
+                TestkubeLogger.debug("Found writable ~/bin directory: " + homeBinPath);
+                return homeBinPath;
+            }
+
+            // Check $HOME
+            if (isWritablePath(userHome)) {
+                TestkubeLogger.debug("Using writable user home directory: " + userHome);
+                return userHome;
+            }
+        }
+
+        // Check common binary paths
+        List<String> commonBinaryPaths = Arrays.asList("/usr/local/bin", "/usr/bin", "/opt/bin", "/bin");
         for (String path : commonBinaryPaths) {
             if (isWritablePath(path)) {
                 TestkubeLogger.debug("Found writable common binary path: " + path);
@@ -270,12 +293,7 @@ public class TestkubeCLI {
             }
         }
 
-        String userHome = System.getProperty("user.home");
-        if (userHome != null && isWritablePath(userHome)) {
-            TestkubeLogger.debug("Using writable user home directory: " + userHome);
-            return userHome;
-        }
-
+        // Check PATH environment directories as last resort
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null && !pathEnv.isEmpty()) {
             for (String path : pathEnv.split(File.pathSeparator)) {
@@ -319,8 +337,7 @@ public class TestkubeCLI {
         HttpClient client = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-        HttpRequest request =
-                HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(artifactUrl)).build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
         // Check response status code
@@ -420,8 +437,8 @@ public class TestkubeCLI {
 
         // Create separate threads to handle stdout and stderr
         Thread outputThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
@@ -432,8 +449,8 @@ public class TestkubeCLI {
         });
 
         Thread errorThread = new Thread(() -> {
-            try (BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     TestkubeLogger.println("[CLI] " + line);
